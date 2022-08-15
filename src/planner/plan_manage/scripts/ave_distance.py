@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
+#!/usr/bin/env python  
 #Author: Kota Kondo
-#Date: August 13, 2022
+#Date: July 15, 2022
 
 #you can get transformation btwn two agents and if they are too close (violating bbox) then it prints out warning
 #the reason why we use tf instead of snapstack_msgs/State is two agents publish their states asynchrnonously and therefore comparing
@@ -13,19 +14,18 @@ import sys
 import time
 import rospy
 import rosgraph
-
 from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import Odometry
 from snapstack_msgs.msg import State
-from traj_utils.msg import Collision
-
+from traj_utils.msg import GoalReached
+from nav_msgs.msg import Odometry
 import numpy as np
 from random import *
 import tf2_ros
 from numpy import linalg as LA
+import pandas as pd 
 
-class CollisionDetector:
-
+class AveDistance:
+    
     def __init__(self):
 
         self.tfBuffer = tf2_ros.Buffer()
@@ -33,30 +33,42 @@ class CollisionDetector:
 
         rospy.sleep(3) #Important, if not it won't work
 
-        # numerical tolerance
-        # state is not synchronized and time difference could be up to 0.01[s] so we need tolerance
-        # if max vel is 2.0m/s -> there should be 0.04m tolerance
-        self.tol = 0.01 #[m] 
-
         # bbox size
-        self.bbox_x = rospy.get_param('~bbox_x', 0.5) - self.tol #default value is 0.15
-        self.bbox_y = rospy.get_param('~bbox_y', 0.5) - self.tol #default value is 0.15
-        self.bbox_z = rospy.get_param('~bbox_z', 0.5) - self.tol #default value is 0.15
-        self.num_of_agents = rospy.get_param('~num_of_agents')
+        self.num_of_agents = rospy.get_param('~num_of_agents', 10)
+
+        # matrix that saves sum of distance
+        self.dist_matrix = np.zeros([self.num_of_agents, self.num_of_agents])
+
+        # count how many dist we get
+        self.cnt = np.zeros([self.num_of_agents, self.num_of_agents])
+
+        # folder location
+        self.folder_loc = rospy.get_param('~folder_loc')
+
+        # sim number
+        self.sim = rospy.get_param('~sim')
+        if self.sim <=9:
+            self.sim = "0" + str(self.sim)
+
+        # subscriber
+        self.goal_reached = GoalReached()
+        self.subGoalReached = rospy.Subscriber('goal_reached', GoalReached, self.GoalReachedCB)
 
         self.initialized = False
         self.initialized_mat = [False for i in range(self.num_of_agents)]
 
         self.state_pos = np.empty([self.num_of_agents,3])
 
-        # publisher init
-        self.collision=Collision()
-        self.pubIsCollided = rospy.Publisher('is_collided', Collision, queue_size=1, latch=True)
-
-        # 
+    def GoalReachedCB(self, data):
+        for i in range(self.num_of_agents):
+            for j in range(i+1,self.num_of_agents):
+                self.dist_matrix[i,j] = self.dist_matrix[i,j] / self.cnt[i,j]
+        # print(self.dist_matrix)
+        pd.DataFrame(self.dist_matrix).to_csv(str(self.folder_loc)+'/sim_'+str(self.sim)+'.csv')
+        os.system("rosnode kill ave_distance");
 
     # collision detection
-    def collisionDetect(self, timer):
+    def AveDistanceCalculate(self, timer):
         
         if not self.initialized:
             initialized = True
@@ -66,81 +78,44 @@ class CollisionDetector:
                     break
             self.initialized = initialized
 
+
         if self.initialized:
-            for i in range(1,self.num_of_agents):
-                for j in range(i+1,self.num_of_agents+1):
+            for i in range(self.num_of_agents):
+                for j in range(i+1,self.num_of_agents):
 
-                    if i<=9:
-                        agent1 = "SQ0" + str(i) + "s" 
+                    if i<9:
+                        agent1 = "SQ0" + str(i+1) + "s" 
                     else:
-                        agent1 = "SQ" + str(i) + "s" 
+                        agent1 = "SQ" + str(i+1) + "s" 
 
-                    if j<=9:
-                        agent2 = "SQ0" + str(j) + "s" 
+                    if j<9:
+                        agent2 = "SQ0" + str(j+1) + "s" 
                     else:
-                        agent2 = "SQ" + str(j) + "s" 
+                        agent2 = "SQ" + str(j+1) + "s" 
                     
                     # trans = self.get_transformation(agent1, agent2)
+
+                    x_diff = abs(self.state_pos[i,0] - self.state_pos[j,0])
+                    y_diff = abs(self.state_pos[i,1] - self.state_pos[j,1])
+                    z_diff = abs(self.state_pos[i,2] - self.state_pos[j,2])
+
+                    print(x_diff)
+                    print(y_diff)
+                    print(z_diff)
+
+                    self.dist_matrix[i,j] = self.dist_matrix[i,j] + LA.norm(np.array([x_diff, y_diff, z_diff]))
+                    self.cnt[i,j] = self.cnt[i,j] + 1                    
+
                     # if trans is not None:
 
-                    # print("here")
+                    #     # print(LA.norm(np.array([trans.transform.translation.x, trans.transform.translation.y, trans.transform.translation.z])))
 
-                    if (abs(self.state_pos[i-1,0] - self.state_pos[j-1,0]) < self.bbox_x 
-                        and abs(self.state_pos[i-1,1] - self.state_pos[j-1,1]) < self.bbox_y 
-                        and abs(self.state_pos[i-1,2] - self.state_pos[j-1,2]) < self.bbox_z):
-
-                    # if (abs(trans.transform.translation.x) < self.bbox_x
-                    #     and abs(trans.transform.translation.y) < self.bbox_y
-                    #     and abs(trans.transform.translation.z) < self.bbox_z):
-                        
-                        print("collision btwn " + agent1 + " and " + agent2)
-                        # print("agent" + str(i+1) + " and " + str(j+1) + " collide")
-
-                        x_diff = abs(self.state_pos[i-1,0] - self.state_pos[j-1,0])
-                        y_diff = abs(self.state_pos[i-1,1] - self.state_pos[j-1,1])
-                        z_diff = abs(self.state_pos[i-1,2] - self.state_pos[j-1,2])
-
-                        # print("difference in x is " + str(x_diff))
-                        # print("difference in y is " + str(y_diff))
-                        # print("difference in z is " + str(z_diff))
-
-                        # max_dist = max(abs(trans.transform.translation.x), abs(trans.transform.translation.y), abs(trans.transform.translation.z))
-                        max_dist = max(x_diff, y_diff, z_diff)
-
-                        self.collision.is_collided = True
-                        self.collision.agent1 = agent1
-                        self.collision.agent2 = agent2
-
-                        print("violation dist is " + str(max_dist))
-                        print("\n")
-
-                        self.collision.dist = max_dist 
-                        self.pubIsCollided.publish(self.collision)
-
-                    #     # print(str(agent1) + " and " + str(agent2) + ": " + str(trans.transform.translation.x))
-                    
-                    #     if (abs(trans.transform.translation.x) < self.bbox_x
-                    #         and abs(trans.transform.translation.y) < self.bbox_y
-                    #         and abs(trans.transform.translation.z) < self.bbox_z):
-                            
-                    #         self.collision.is_collided = True
-                    #         self.collision.agent1 = trans.header.frame_id
-                    #         self.collision.agent2 = trans.child_frame_id
-
-                    #         print("collision btwn " + trans.header.frame_id + " and " + trans.child_frame_id)
-
-                    #         max_dist = max(abs(trans.transform.translation.x), abs(trans.transform.translation.y), abs(trans.transform.translation.z))
-
-                    #         print("violation dist is " + str(max_dist))
-
-                    #         self.collision.dist = max_dist 
-                    #         self.pubIsCollided.publish(self.collision)
-
+                    #     self.dist_matrix[i,j] = self.dist_matrix[i,j] + LA.norm(np.array([trans.transform.translation.x, trans.transform.translation.y, trans.transform.translation.z]))
+                    #     self.cnt[i,j] = self.cnt[i,j] + 1
 
     def SQ00stateCB(self, data):
         self.state_pos[0,0:3] = np.array([data.pose.pose.position.x, data.pose.pose.position.y, data.pose.pose.position.z])
         # print(LA.norm(self.state_pos))
-        # print(self.state_pos[0,:])
         if self.initialized_mat[0] == False and LA.norm(self.state_pos[0,0:3]) > 0.1: # make sure first [0, 0, 0] state info will not be used
             self.initialized_mat[0] = True
     def SQ01stateCB(self, data):
@@ -184,14 +159,14 @@ class CollisionDetector:
 
         # get the tf at first available time
         try:
-            transformation = self.tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time(0), rospy.Duration(0.01))
+            transformation = self.tfBuffer.lookup_transform(source_frame, target_frame, rospy.Time(0), rospy.Duration(0.1))
             return transformation
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             pass
             # rospy.logerr("Unable to find the transformation")
 
 def startNode():
-    c = CollisionDetector()
+    c = AveDistance()
     rospy.Subscriber("/drone_0_visual_slam/odom", Odometry, c.SQ00stateCB)
     rospy.Subscriber("/drone_1_visual_slam/odom", Odometry, c.SQ01stateCB)
     rospy.Subscriber("/drone_2_visual_slam/odom", Odometry, c.SQ02stateCB)
@@ -203,9 +178,9 @@ def startNode():
     rospy.Subscriber("/drone_8_visual_slam/odom", Odometry, c.SQ08stateCB)
     rospy.Subscriber("/drone_9_visual_slam/odom", Odometry, c.SQ09stateCB)
 
-    rospy.Timer(rospy.Duration(0.001), c.collisionDetect)
+    rospy.Timer(rospy.Duration(0.1), c.AveDistanceCalculate)
     rospy.spin()
 
 if __name__ == '__main__':
-    rospy.init_node('CollisionDetector')
+    rospy.init_node('AveDistance')
     startNode()
