@@ -41,7 +41,6 @@
 
   <arg name="drone_id"/>
 
-
   <!-- main node -->
   <!-- <node pkg="ego_planner" name="ego_planner_node" type="ego_planner_node" output="screen" launch-prefix="valgrind"> -->
   <node pkg="ego_planner" name="drone_$(arg drone_id)_ego_planner_node" type="ego_planner_node" output="screen">
@@ -59,6 +58,7 @@
     
 
     <!-- planning fsm -->
+    <!-- <param name="fsm/commdelay" value="0.0" type="double"/> -->
     <param name="fsm/flight_type" value="$(arg flight_type)" type="int"/>
     <param name="fsm/thresh_replan_time" value="1.0" type="double"/>
     <param name="fsm/thresh_no_replan_meter" value="1.0" type="double"/>

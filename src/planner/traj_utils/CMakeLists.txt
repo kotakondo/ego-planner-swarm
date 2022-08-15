@@ -24,6 +24,9 @@ add_message_files(
   Bspline.msg
   DataDisp.msg
   MultiBsplines.msg
+  Collision.msg
+  GoalReached.msg
+  CommDelay.msg
   )
   
 # Generate added messages and services with any dependencies listed here

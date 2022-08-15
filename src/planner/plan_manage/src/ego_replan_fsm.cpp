@@ -22,6 +22,9 @@ void EGOReplanFSM::init(ros::NodeHandle &nh)
   nh_.param("fsm/realworld_experiment", flag_realworld_experiment_, false);
   nh_.param("fsm/fail_safe", enable_fail_safe_, true);
 
+  /* comm delay */
+  nh_.param("fsm/commdelay", commdelay_, 0.0);
+
   have_trigger_ = !flag_realworld_experiment_;
 
   nh_.param("fsm/waypoint_num", waypoint_num_, -1);
@@ -71,6 +74,7 @@ void EGOReplanFSM::init(ros::NodeHandle &nh)
 
   bspline_pub_ = nh_.advertise<traj_utils::Bspline>("planning/bspline", 10);
   data_disp_pub_ = nh_.advertise<traj_utils::DataDisp>("planning/data_display", 100);
+  comm_delay_pub_ = nh_.advertise<traj_utils::CommDelay>("comm_delay", 100);
 
   if (target_type_ == TARGET_TYPE::MANUAL_TARGET)
   {
@@ -261,6 +265,7 @@ void EGOReplanFSM::CommDelayBroadcastBsplineCallback(const traj_utils::BsplinePt
   alltrajs_.push_back(msg);
   ros::Timer alltrajs_timer =
       nh_.createTimer(ros::Duration(commdelay_), &EGOReplanFSM::BroadcastBsplineCallback, this, true);
+  std::cout << commdelay_ << std::endl;
   alltrajsTimers_.push_back(alltrajs_timer);
 }
 
@@ -270,6 +275,12 @@ void EGOReplanFSM::BroadcastBsplineCallback(const ros::TimerEvent &e)
   traj_utils::BsplinePtr msg = alltrajs_[0];
   alltrajs_.pop_front();
   alltrajsTimers_.pop_front();
+
+  double supposedly_simulated_comm_delay = (ros::Time::now() - msg->start_time).toSec();
+
+  traj_utils::CommDelay comm_msg;
+  comm_msg.comm_delay = supposedly_simulated_comm_delay;
+  comm_delay_pub_.publish(comm_msg);
 
   size_t id = msg->drone_id;
   if ((int)id == planner_manager_->pp_.drone_id)

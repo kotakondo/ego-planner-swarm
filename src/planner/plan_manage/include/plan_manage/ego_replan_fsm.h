@@ -17,6 +17,7 @@
 #include <traj_utils/MultiBsplines.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <traj_utils/DataDisp.h>
+#include <traj_utils/CommDelay.h>
 #include <plan_manage/planner_manager.h>
 #include <traj_utils/planning_visualization.h>
 
@@ -81,12 +82,13 @@ private:
   ros::NodeHandle node_;
   ros::Timer exec_timer_, safety_timer_;
   ros::Subscriber waypoint_sub_, odom_sub_, swarm_trajs_sub_, broadcast_bspline_sub_, trigger_sub_;
-  ros::Publisher replan_pub_, new_pub_, bspline_pub_, data_disp_pub_, swarm_trajs_pub_, broadcast_bspline_pub_;
+  ros::Publisher replan_pub_, new_pub_, bspline_pub_, data_disp_pub_, swarm_trajs_pub_, broadcast_bspline_pub_,
+      comm_delay_pub_;
 
   /* temporay trajectory stored vector */
   std::deque<traj_utils::BsplinePtr> alltrajs_;
   std::deque<ros::Timer> alltrajsTimers_;
-  double commdelay_ = 0.1;  // seconds
+  double commdelay_;  // seconds
 
   /* node handle */
   ros::NodeHandle nh_;
