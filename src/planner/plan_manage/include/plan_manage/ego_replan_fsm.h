@@ -46,6 +46,9 @@ private:
     REFENCE_PATH = 3
   };
 
+  /* indicate if close to the global goal (used for commdelay) */
+  bool is_goal_reached_ = false;
+
   /* planning utils */
   EGOPlannerManager::Ptr planner_manager_;
   PlanningVisualization::Ptr visualization_;

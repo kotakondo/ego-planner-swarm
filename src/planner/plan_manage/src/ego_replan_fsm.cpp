@@ -271,16 +271,18 @@ void EGOReplanFSM::CommDelayBroadcastBsplineCallback(const traj_utils::BsplinePt
 
 void EGOReplanFSM::BroadcastBsplineCallback(const ros::TimerEvent &e)
 {
-  // pop front
+  // commdelay
   traj_utils::BsplinePtr msg = alltrajs_[0];
   alltrajs_.pop_front();
   alltrajsTimers_.pop_front();
-
-  double supposedly_simulated_comm_delay = (ros::Time::now() - msg->start_time).toSec();
-
-  traj_utils::CommDelay comm_msg;
-  comm_msg.comm_delay = supposedly_simulated_comm_delay;
-  comm_delay_pub_.publish(comm_msg);
+  if (!is_goal_reached_)
+  {
+    double supposedly_simulated_comm_delay = (ros::Time::now() - msg->start_time).toSec();
+    traj_utils::CommDelay comm_msg;
+    comm_msg.comm_delay = supposedly_simulated_comm_delay;
+    comm_delay_pub_.publish(comm_msg);
+  }
+  // commdelay end
 
   size_t id = msg->drone_id;
   if ((int)id == planner_manager_->pp_.drone_id)
@@ -679,6 +681,8 @@ void EGOReplanFSM::execFSMCallback(const ros::TimerEvent &e)
       }
       else if ((local_target_pt_ - end_pt_).norm() < 1e-3)  // close to the global target
       {
+        is_goal_reached_ = true;  // used for commdelay
+
         if (t_cur > info->duration_ - 1e-2)
         {
           have_target_ = false;
