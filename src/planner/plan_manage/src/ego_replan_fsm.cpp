@@ -59,6 +59,7 @@ void EGOReplanFSM::init(ros::NodeHandle &nh)
       string("/drone_") + std::to_string(planner_manager_->pp_.drone_id) + string("_planning/swarm_trajs");
   swarm_trajs_pub_ = nh_.advertise<traj_utils::MultiBsplines>(pub_topic_name.c_str(), 10);
 
+  // this is broadcasting bspline to others
   broadcast_bspline_pub_ = nh_.advertise<traj_utils::Bspline>("planning/broadcast_bspline_from_planner", 10);
 
   // Introduce communication delay here
@@ -72,7 +73,9 @@ void EGOReplanFSM::init(ros::NodeHandle &nh)
       nh_.subscribe("planning/broadcast_bspline_to_planner", 100, &EGOReplanFSM::CommDelayBroadcastBsplineCallback,
                     this, ros::TransportHints().tcpNoDelay());
 
+  // this is from /drone_$(drone_id)_planning/bspline to /drone_5_traj_server
   bspline_pub_ = nh_.advertise<traj_utils::Bspline>("planning/bspline", 10);
+
   data_disp_pub_ = nh_.advertise<traj_utils::DataDisp>("planning/data_display", 100);
   comm_delay_pub_ = nh_.advertise<traj_utils::CommDelay>("comm_delay", 100);
 
@@ -910,7 +913,10 @@ bool EGOReplanFSM::callReboundReplan(bool flag_use_poly_init, bool flag_randomPo
     }
 
     /* 1. publish traj to traj_server */
-    bspline_pub_.publish(bspline);
+    if (!is_goal_reached_)
+    {
+      bspline_pub_.publish(bspline);
+    }
 
     /* 2. publish traj to the next drone of swarm */
 
