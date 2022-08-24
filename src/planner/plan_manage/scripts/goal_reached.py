@@ -27,7 +27,7 @@ class GoalReachedCheck:
         rospy.sleep(3)
 
         # goal radius
-        self.goal_radius = 0.2
+        self.goal_radius = 0.3 #EGO swarm sometimes cannot get the goals with 0.15
 
         # number of agents
         self.num_of_agents = 10

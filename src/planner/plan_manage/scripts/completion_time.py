@@ -62,7 +62,6 @@ if __name__ == '__main__':
                 print(completion_time)
                 completion_time_per_sim_list.append(completion_time)
                 box_plot_list.append(completion_time_per_sim_list)
-
             except:
                 print("agents didn't reach goals")
 
