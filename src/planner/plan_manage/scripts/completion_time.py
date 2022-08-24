@@ -62,14 +62,14 @@ if __name__ == '__main__':
                 print(completion_time)
                 completion_time_per_sim_list.append(completion_time)
                 box_plot_list.append(completion_time_per_sim_list)
-                os.system('echo "'+source_dir+'" >> /home/kota/ego_swarm_data/completion_time.txt')
-                os.system('echo "max is '+str(round(max(completion_time_per_sim_list),2))+'s" >> /home/kota/ego_swarm_data/completion_time.txt')
-                os.system('echo "ave is '+str(round(statistics.mean(completion_time_per_sim_list),2))+'s" >> /home/kota/ego_swarm_data/completion_time.txt')
-                os.system('echo "------------------------------------------------------------" >> /home/kota/ego_swarm_data/completion_time.txt')
-
             except:
                 print("agents didn't reach goals")
 
+        os.system('echo "'+source_dir+'" >> /home/kota/ego_swarm_data/completion_time.txt')
+        os.system('echo "max is '+str(round(max(completion_time_per_sim_list),2))+'s" >> /home/kota/ego_swarm_data/completion_time.txt')
+        os.system('echo "ave is '+str(round(statistics.mean(completion_time_per_sim_list),2))+'s" >> /home/kota/ego_swarm_data/completion_time.txt')
+        os.system('echo "------------------------------------------------------------" >> /home/kota/ego_swarm_data/completion_time.txt')
+        
         # # plot
         # fig = plt.figure()
         # # Creating axes instance

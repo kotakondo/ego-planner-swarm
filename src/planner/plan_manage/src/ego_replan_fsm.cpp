@@ -268,7 +268,7 @@ void EGOReplanFSM::CommDelayBroadcastBsplineCallback(const traj_utils::BsplinePt
   alltrajs_.push_back(msg);
   ros::Timer alltrajs_timer =
       nh_.createTimer(ros::Duration(commdelay_), &EGOReplanFSM::BroadcastBsplineCallback, this, true);
-  std::cout << commdelay_ << std::endl;
+  // std::cout << commdelay_ << std::endl;
   alltrajsTimers_.push_back(alltrajs_timer);
 }
 

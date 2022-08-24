@@ -37,7 +37,7 @@ def myhook():
 if __name__ == '__main__':
 
     # parameters
-    num_of_sims=5
+    num_of_sims=110
     num_of_agents=10
     how_long_to_wait = 20 #[s]
     cd_list = [0, 50, 100, 200, 300]
@@ -154,6 +154,7 @@ commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python collisio
 commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python completion_time.py")
 commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python comm_delay_histogram_percentile.py")
 commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python ave_distance_csv2txt.py")
+commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python detect_who_died_ego_swarm.py")
 
 # tmux splitting
 for i in range(len(commands)):
