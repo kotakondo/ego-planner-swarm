@@ -35,7 +35,8 @@ if __name__ == '__main__':
 
         figname = '/cd'+str(cd)+'_comm_delay_histogram.png'
 
-        home_dir = "/media/kota/T7/data/ego_swarm_data"
+        # home_dir = "/media/kota/T7/data/ego_swarm_data"
+        home_dir = "/home/kota/ego_swarm_data"
         source_dir = home_dir+"/bags" # change the source dir accordingly #10 agents 
         source_bags = source_dir + "/cd"+str(cd)+"ms/*.bag" # change the source dir accordingly #10 agents
 

@@ -30,7 +30,8 @@ if __name__ == '__main__':
 
         dist_matrix_dc = np.zeros([num_of_agents, num_of_agents])
 
-        home_dir = "/media/kota/T7/data/ego_swarm_data"
+        # home_dir = "/media/kota/T7/data/ego_swarm_data"
+        home_dir = "/home/kota/ego_swarm_data"
         source_dir = home_dir+"/csv/cd"+str(cd)+"ms" # change the source dir accordingly #10 agents
         
         source_len = len(source_dir)

@@ -30,7 +30,8 @@ if __name__ == '__main__':
         # this gives you 2d array, row gives you each sims data in corresponding dc
         box_plot_list = [] 
 
-        home_dir = "/media/kota/T7/data/ego_swarm_data"
+        # home_dir = "/media/kota/T7/data/ego_swarm_data"
+        home_dir = "/home/kota/ego_swarm_data"
 
         # source directory
         source_dir = home_dir+"/bags/cd"+str(cd)+"ms" # change the source dir accordingly #10 agents
