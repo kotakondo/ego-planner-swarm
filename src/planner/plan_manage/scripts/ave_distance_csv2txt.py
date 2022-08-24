@@ -30,7 +30,8 @@ if __name__ == '__main__':
 
         dist_matrix_dc = np.zeros([num_of_agents, num_of_agents])
 
-        source_dir = "/home/kota/ego_swarm_data/csv/cd"+str(cd)+"ms" # change the source dir accordingly #10 agents
+        home_dir = "/media/kota/T7/data/ego_swarm_data"
+        source_dir = home_dir+"/csv/cd"+str(cd)+"ms" # change the source dir accordingly #10 agents
         
         source_len = len(source_dir)
         source_csvs = source_dir + "/*.csv" # change the source dir accordingly
@@ -76,14 +77,14 @@ if __name__ == '__main__':
         ave_per_dc = sum_of_rows / ((num_of_agents-1)*np.ones(num_of_agents)) #num_of_agents-1 is becasue you don't calcuate the distance from itself to itself 
         # print(ave_per_dc)
 
-        os.system('echo "'+source_dir+'" >> /home/kota/ego_swarm_data/ave_distance.txt')
+        os.system('echo "'+source_dir+'" >> '+home_dir+'/ave_distance.txt')
         # for i in range(num_of_agents):
         #     if i<=9:
         #         sim_id = "0"+str(i)
         #     else:
         #         sim_id = str(i)
-            # os.system('echo "SQ'+sim_id+' '+str(ave_per_dc[i])+'" >> /home/kota/ego_swarm_data/ave_distance.txt')
+            # os.system('echo "SQ'+sim_id+' '+str(ave_per_dc[i])+'" >> /media/kota/ego_swarm_data/ave_distance.txt')
 
         total_ave_dist = sum(ave_per_dc)/len(ave_per_dc)
-        os.system('echo "total distance '+str(round(total_ave_dist,2))+'m" >> /home/kota/ego_swarm_data/ave_distance.txt')
-        os.system('echo "------------------------------------------------------------" >> /home/kota/ego_swarm_data/ave_distance.txt')
+        os.system('echo "total distance '+str(round(total_ave_dist,2))+'m" >> '+home_dir+'/ave_distance.txt')
+        os.system('echo "------------------------------------------------------------" >> '+home_dir+'/ave_distance.txt')

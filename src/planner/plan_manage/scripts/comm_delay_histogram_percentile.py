@@ -33,8 +33,10 @@ if __name__ == '__main__':
 
     for cd in cd_list:
 
-        figname = 'cd'+str(cd)+'_comm_delay_histogram.png'
-        source_dir = "/home/kota/ego_swarm_data/bags" # change the source dir accordingly #10 agents 
+        figname = '/cd'+str(cd)+'_comm_delay_histogram.png'
+
+        home_dir = "/media/kota/T7/data/ego_swarm_data"
+        source_dir = home_dir+"/bags" # change the source dir accordingly #10 agents 
         source_bags = source_dir + "/cd"+str(cd)+"ms/*.bag" # change the source dir accordingly #10 agents
 
         rosbag_list = glob.glob(source_bags)
@@ -65,8 +67,8 @@ if __name__ == '__main__':
         # print percentile
 
         comm_delay_arr = numpy.array(comm_delay)
-        os.system('echo "----------------------------------------------------------------------------------" >> /home/kota/ego_swarm_data/comm_delay_percentile.txt')
-        os.system('echo "'+source_bags+'" >> /home/kota/ego_swarm_data/comm_delay_percentile.txt')
+        os.system('echo "----------------------------------------------------------------------------------" >> '+home_dir+'/comm_delay_percentile.txt')
+        os.system('echo "'+source_bags+'" >> '+home_dir+'/comm_delay_percentile.txt')
 
         # print(comm_delay)
 
@@ -94,7 +96,7 @@ if __name__ == '__main__':
         plt.title('Comm delay histogram \n max comm_delay is '+str(round(max_comm_delay*1000))+' [ms]')
         plt.xlabel("comm delay [ms]")
         plt.ylabel("count")
-        plt.savefig('/home/kota/ego_swarm_data/'+figname)
+        plt.savefig(home_dir+figname)
         plt.close('all')
         # plt.show()
         # except:
@@ -104,6 +106,6 @@ if __name__ == '__main__':
         # print("----------------------------------------------------------------------------------")
         for q in range(100,0,-25):
             try:
-                os.system('echo "'+str(q)+'-th : '+ str(round(numpy.percentile(comm_delay_arr, q)*1000,2)) + 'ms" >> /home/kota/ego_swarm_data/comm_delay_percentile.txt')
+                os.system('echo "'+str(q)+'-th : '+ str(round(numpy.percentile(comm_delay_arr, q)*1000,2)) + 'ms" >> '+home_dir+'/comm_delay_percentile.txt')
             except:
                 pass

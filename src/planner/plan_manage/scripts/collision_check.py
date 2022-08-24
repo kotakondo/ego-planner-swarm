@@ -29,7 +29,8 @@ if __name__ == '__main__':
 
         collision_cnt = 0
 
-        source_dir = "/home/kota/ego_swarm_data/bags/cd"+str(cd)+"ms" # change the source dir accordingly #10 agents
+        home_dir = "/media/kota/T7/data/ego_swarm_data"
+        source_dir = home_dir+"/bags/cd"+str(cd)+"ms" # change the source dir accordingly #10 agents
         
         source_len = len(source_dir)
         source_bags = source_dir + "/*.bag" # change the source dir accordingly
@@ -59,6 +60,6 @@ if __name__ == '__main__':
 
         collision_per = 100 - collision_cnt / len(rosbag) * 100
         os.system('paste '+source_dir+'/collision_status.txt '+source_dir+'/status.txt >> '+source_dir+'/complete_status.txt')
-        os.system('echo "'+source_dir+'" >> /home/kota/ego_swarm_data/collision_count.txt')
-        os.system('echo "'+str(collision_cnt)+'/'+str(len(rosbag))+' - '+str(round(collision_per,2))+'%" >> /home/kota/ego_swarm_data/collision_count.txt')
-        os.system('echo "------------------------------------------------------------" >> /home/kota/ego_swarm_data/collision_count.txt')
+        os.system('echo "'+source_dir+'" >> '+home_dir+'/collision_count.txt')
+        os.system('echo "'+str(collision_cnt)+'/'+str(len(rosbag))+' - '+str(round(collision_per,2))+'%" >> '+home_dir+'/collision_count.txt')
+        os.system('echo "------------------------------------------------------------" >> '+home_dir+'/collision_count.txt')
