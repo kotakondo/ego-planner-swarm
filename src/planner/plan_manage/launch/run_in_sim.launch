@@ -56,7 +56,7 @@ c
     <arg name="max_acc" value="3.0" /> -->
 
     <!--always set to 1.5 times grater than sensing horizen-->
-    <arg name="planning_horizon" value="10.0" /> 
+    <arg name="planning_horizon" value="20.0" /> 
     <!-- <arg name="planning_horizon" value="7.5" />  -->
 
     <arg name="use_distinctive_trajs" value="true" />
