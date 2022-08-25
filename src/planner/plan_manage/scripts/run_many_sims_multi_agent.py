@@ -155,7 +155,7 @@ commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python completi
 commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python comm_delay_histogram_percentile.py")
 commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python ave_distance_csv2txt.py")
 commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python total_dist_and_stoppage_ego_swarm.py")
-# commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python detect_who_died_ego_swarm.py")
+commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python detect_who_died_ego_swarm.py")
 
 # tmux splitting
 for i in range(len(commands)):
