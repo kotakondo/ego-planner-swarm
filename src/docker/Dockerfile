@@ -33,7 +33,7 @@ RUN mkdir -p /home/kota/ego_swarm_ws/
 COPY ego-planner-swarm /home/kota/ego_swarm_ws/ego-planner-swarm
 RUN DEBIAN_FRONTEND=noninteractive rosdep install --from-paths /home/kota/ego_swarm_ws/ego-planner-swarm/src --ignore-src -r -y
 WORKDIR /home/kota/ego_swarm_ws/ego-planner-swarm
-RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; cd /home/kota/ego_swarm_ws/ego-planner-swarm; catkin_make -j1'
+RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; cd /home/kota/ego_swarm_ws/ego-planner-swarm; catkin_make'
 RUN echo source /opt/ros/noetic/setup.bash >> ~/.bashrc
 RUN echo source /home/kota/ego_swarm_ws/ego-planner-swarm/devel/setup.bash >> ~/.bashrc
 RUN echo 'alias cb="catkin build"' >> ~/.bashrc && \
