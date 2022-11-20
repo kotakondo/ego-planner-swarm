@@ -1,3 +1,13 @@
+# How to use docker
+## build
+cd ego_swarm_ws
+docker build -f ego-planner-swarm/src/docker/Dockerfile -t ego_swarm .
+## run
+cd ego_swarm_ws
+docker run -it --volume=/home/kota/data/ego_swarm:/home/data/ego_swarm ego_swarm
+## run the simulation
+roscd ego_planner && cd src/planner/plan_manage/scripts/ && python run_many_sims_multi_agent.py
+
 # Quick Start within 3 Minutes 
 Compiling tests passed on ubuntu **16.04, 18.04, and 20.04** with ros installed.
 You can just execute the following commands one by one.
