@@ -16,7 +16,7 @@ import rosgraph
 
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
-from snapstack_msgs.msg import State
+# from snapstack_msgs.msg import State
 from traj_utils.msg import Collision
 
 import numpy as np
@@ -36,13 +36,13 @@ class CollisionDetector:
         # numerical tolerance
         # state is not synchronized and time difference could be up to 0.01[s] so we need tolerance
         # if max vel is 2.0m/s -> there should be 0.04m tolerance
-        self.tol = 0.01 #[m] 
+        self.tol = 0.02 #[m] 
 
         # bbox size
         self.bbox_x = rospy.get_param('~bbox_x', 0.25) - self.tol #default value is 0.15
         self.bbox_y = rospy.get_param('~bbox_y', 0.25) - self.tol #default value is 0.15
         self.bbox_z = rospy.get_param('~bbox_z', 0.25) - self.tol #default value is 0.15
-        self.num_of_agents = rospy.get_param('~num_of_agents')
+        self.num_of_agents = rospy.get_param('~num_of_agents', 10)
 
         self.initialized = False
         self.initialized_mat = [False for i in range(self.num_of_agents)]
@@ -179,6 +179,30 @@ class CollisionDetector:
         self.state_pos[9,0:3] = np.array([data.pose.pose.position.x, data.pose.pose.position.y, data.pose.pose.position.z])
         if self.initialized_mat[9] == False and LA.norm(self.state_pos[9,0:3]) > 0.1: # make sure first [0, 0, 0] state info will not be used
             self.initialized_mat[9] = True
+    # def SQ10stateCB(self, data):
+    #     self.state_pos[10,0:3] = np.array([data.pose.pose.position.x, data.pose.pose.position.y, data.pose.pose.position.z])
+    #     if self.initialized_mat[10] == False and LA.norm(self.state_pos[10,0:3]) > 0.1: # make sure first [0, 0, 0] state info will not be used
+    #         self.initialized_mat[10] = True
+    # def SQ11stateCB(self, data):
+    #     self.state_pos[11,0:3] = np.array([data.pose.pose.position.x, data.pose.pose.position.y, data.pose.pose.position.z])
+    #     if self.initialized_mat[11] == False and LA.norm(self.state_pos[11,0:3]) > 0.1: # make sure first [0, 0, 0] state info will not be used
+    #         self.initialized_mat[11] = True
+    # def SQ12stateCB(self, data):
+    #     self.state_pos[12,0:3] = np.array([data.pose.pose.position.x, data.pose.pose.position.y, data.pose.pose.position.z])
+    #     if self.initialized_mat[12] == False and LA.norm(self.state_pos[12,0:3]) > 0.1: # make sure first [0, 0, 0] state info will not be used
+    #         self.initialized_mat[12] = True
+    # def SQ13stateCB(self, data):
+    #     self.state_pos[13,0:3] = np.array([data.pose.pose.position.x, data.pose.pose.position.y, data.pose.pose.position.z])
+    #     if self.initialized_mat[13] == False and LA.norm(self.state_pos[13,0:3]) > 0.1: # make sure first [0, 0, 0] state info will not be used
+    #         self.initialized_mat[13] = True
+    # def SQ14stateCB(self, data):
+    #     self.state_pos[14,0:3] = np.array([data.pose.pose.position.x, data.pose.pose.position.y, data.pose.pose.position.z])
+    #     if self.initialized_mat[14] == False and LA.norm(self.state_pos[14,0:3]) > 0.1: # make sure first [0, 0, 0] state info will not be used
+    #         self.initialized_mat[14] = True
+    # def SQ15stateCB(self, data):
+    #     self.state_pos[15,0:3] = np.array([data.pose.pose.position.x, data.pose.pose.position.y, data.pose.pose.position.z])
+    #     if self.initialized_mat[15] == False and LA.norm(self.state_pos[15,0:3]) > 0.1: # make sure first [0, 0, 0] state info will not be used
+    #         self.initialized_mat[15] = True
 
     def get_transformation(self, source_frame, target_frame):
 
@@ -202,6 +226,12 @@ def startNode():
     rospy.Subscriber("/drone_7_visual_slam/odom", Odometry, c.SQ07stateCB)
     rospy.Subscriber("/drone_8_visual_slam/odom", Odometry, c.SQ08stateCB)
     rospy.Subscriber("/drone_9_visual_slam/odom", Odometry, c.SQ09stateCB)
+    # rospy.Subscriber("/drone_10_visual_slam/odom", Odometry, c.SQ10stateCB)
+    # rospy.Subscriber("/drone_11_visual_slam/odom", Odometry, c.SQ11stateCB)
+    # rospy.Subscriber("/drone_12_visual_slam/odom", Odometry, c.SQ12stateCB)
+    # rospy.Subscriber("/drone_13_visual_slam/odom", Odometry, c.SQ13stateCB)
+    # rospy.Subscriber("/drone_14_visual_slam/odom", Odometry, c.SQ14stateCB)
+    # rospy.Subscriber("/drone_15_visual_slam/odom", Odometry, c.SQ15stateCB)
 
     rospy.Timer(rospy.Duration(0.001), c.collisionDetect)
     rospy.spin()

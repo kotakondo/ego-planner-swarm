@@ -14,7 +14,7 @@ import os
 import sys
 import time
 import rospy
-from snapstack_msgs.msg import State
+# from snapstack_msgs.msg import State
 import subprocess
 import numpy as np
 import time
@@ -37,9 +37,9 @@ def myhook():
 if __name__ == '__main__':
 
     # parameters
-    num_of_sims=100
+    num_of_sims=1
     num_of_agents=10
-    how_long_to_wait = 20 #[s]
+    how_long_to_wait = 60 #[s]
     cd_list = [0, 50, 100, 200, 300]
         
     # folder initialization
@@ -47,19 +47,17 @@ if __name__ == '__main__':
     folder_txts_list = []
 
     for cd in cd_list:
-
         cd_in_s = cd/1000;
-
-        folder_bags="/home/kota/ego_swarm_data/bags/cd"+str(cd)+"ms"
-        folder_csv="/home/kota/ego_swarm_data/csv/cd"+str(cd)+"ms"
+        folder_bags="/home/data/ego_swarm/bags/cd"+str(cd)+"ms"
+        # folder_csv="/home/data/ego_swarm_data/csv/cd"+str(cd)+"ms"
 
         # create directy if not exists
         if (not os.path.exists(folder_bags)):
             os.makedirs(folder_bags)
 
          # create directy if not exists
-        if (not os.path.exists(folder_csv)):
-            os.makedirs(folder_csv)        
+        # if (not os.path.exists(folder_csv)):
+        #     os.makedirs(folder_csv)        
 
         # name_node_record="bag_recorder"
         kill_all="tmux kill-server & killall -9 gazebo & killall -9 gzserver  & killall -9 gzclient & killall -9 roscore & killall -9 rosmaster & pkill mader_node & pkill -f dynamic_obstacles & pkill -f rosout & pkill -f behavior_selector_node & pkill -f rviz & pkill -f rqt_gui & pkill -f perfect_tracker & pkill -f mader_commands"
@@ -85,7 +83,7 @@ if __name__ == '__main__':
 
             commands.append("sleep 2.0 && cd "+folder_bags+" && rosbag record -a -o ego_swarm_sim_" + sim_id + " __name:="+name_node_record)
             commands.append("sleep 2.0 && roslaunch ego_planner collision_detector.launch num_of_agents:=" + str(num_of_agents))
-            commands.append("sleep 2.0 && roslaunch ego_planner ave_distance.launch num_of_agents:="+str(num_of_agents)+" folder_loc:="+folder_csv+" sim:="+sim_id)
+            # commands.append("sleep 2.0 && roslaunch ego_planner ave_distance.launch num_of_agents:="+str(num_of_agents)+" folder_loc:="+folder_csv+" sim:="+sim_id)
             commands.append("sleep 2.0 && roslaunch ego_planner goal_reached.launch") #we are calculating completion time here so sleep time needs to be the same as send_goal
 
             commands.append("sleep 5.0 && roslaunch ego_planner multi_run.launch")
@@ -153,9 +151,9 @@ commands = []
 commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python collision_check.py")
 commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python completion_time.py")
 commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python comm_delay_histogram_percentile.py")
-commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python ave_distance_csv2txt.py")
-commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python total_dist_and_stoppage_ego_swarm.py")
-commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python detect_who_died_ego_swarm.py")
+# commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python ave_distance_csv2txt.py")
+# commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python total_dist_and_stoppage_ego_swarm.py")
+# commands.append("sleep 3.0 && roscd ego_planner && cd scripts && python detect_who_died_ego_swarm.py")
 
 # tmux splitting
 for i in range(len(commands)):

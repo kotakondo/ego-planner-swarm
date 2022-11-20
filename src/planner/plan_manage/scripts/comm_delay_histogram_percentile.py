@@ -36,7 +36,7 @@ if __name__ == '__main__':
         figname = '/cd'+str(cd)+'_comm_delay_histogram.png'
 
         # home_dir = "/media/kota/T7/data/ego_swarm_data"
-        home_dir = "/home/kota/ego_swarm_data"
+        home_dir = "/home/data/ego_swarm"
         source_dir = home_dir+"/bags" # change the source dir accordingly #10 agents 
         source_bags = source_dir + "/cd"+str(cd)+"ms/*.bag" # change the source dir accordingly #10 agents
 
@@ -81,17 +81,17 @@ if __name__ == '__main__':
         n, bins, patches = plt.hist(x=comm_delay, color="blue", edgecolor = 'black')
         # plt.axvline(x=dc/1000, color="red")
         if cd == 50:
-            ax.set_xticks(np.arange(0,0.125,0.025))
-            ax.set_xticklabels(np.arange(0,125,25))
+            ax.set_xticks(np.arange(0,0.150,0.025))
+            ax.set_xticklabels(np.arange(0,150,25))
         elif cd == 100:
-            ax.set_xticks(np.arange(0,0.175,0.025))
-            ax.set_xticklabels(np.arange(0,175,25))
+            ax.set_xticks(np.arange(0,0.200,0.025))
+            ax.set_xticklabels(np.arange(0,200,25))
         elif cd == 200:
-            ax.set_xticks(np.arange(0,0.250,0.025))
-            ax.set_xticklabels(np.arange(0,250,25))
-        elif cd == 500:
-            ax.set_xticks(np.arange(0,0.375,0.025))
-            ax.set_xticklabels(np.arange(0,375,25))
+            ax.set_xticks(np.arange(0,0.300,0.025))
+            ax.set_xticklabels(np.arange(0,300,25))
+        elif cd == 300:
+            ax.set_xticks(np.arange(0,0.400,0.025))
+            ax.set_xticklabels(np.arange(0,400,25))
         # plt.rcParams["font.family"] = "Times New Roman"
         plt.grid(axis='y', color='black', alpha=0.2)
         plt.title('Comm delay histogram \n max comm_delay is '+str(round(max_comm_delay*1000))+' [ms]')

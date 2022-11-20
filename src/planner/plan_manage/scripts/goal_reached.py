@@ -12,7 +12,7 @@ import rospy
 import rosgraph
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
-from snapstack_msgs.msg import State
+# from snapstack_msgs.msg import State
 from traj_utils.msg import GoalReached
 import numpy as np
 from random import *
@@ -75,7 +75,7 @@ class GoalReachedCheck:
                         # print(i)
                         # print(self.state_pos[i,:])
                         # print(self.term_goal_pos[i,:])
-                        print(LA.norm(self.state_pos[i,:] - self.term_goal_pos[i,:]))
+                        # print(LA.norm(self.state_pos[i,:] - self.term_goal_pos[i,:]))
                         return
                     else:
                         self.is_goal_reached_mat[i] = True

@@ -15,7 +15,7 @@ import time
 import rospy
 import rosgraph
 from geometry_msgs.msg import PoseStamped
-from snapstack_msgs.msg import State
+# from snapstack_msgs.msg import State
 from traj_utils.msg import GoalReached
 from nav_msgs.msg import Odometry
 import numpy as np

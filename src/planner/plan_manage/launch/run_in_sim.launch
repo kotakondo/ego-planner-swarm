@@ -51,6 +51,7 @@ c
 
     <arg name="max_vel" value="10.0" />
     <arg name="max_acc" value="20.0" />
+    <!-- max jerk is defined in advanced_param.xml -->
 
     <!-- <arg name="max_vel" value="2.0" />
     <arg name="max_acc" value="3.0" /> -->
