@@ -30,6 +30,7 @@ RUN apt-get update && apt-get install python3-catkin-tools -y
 
 # install EGO Swarm
 RUN mkdir -p /home/kota/ego_swarm_ws/
+# RUN git clone https://github.com/kotakondo/ego-planner-swarm.git
 COPY ego-planner-swarm /home/kota/ego_swarm_ws/ego-planner-swarm
 RUN DEBIAN_FRONTEND=noninteractive rosdep install --from-paths /home/kota/ego_swarm_ws/ego-planner-swarm/src --ignore-src -r -y
 WORKDIR /home/kota/ego_swarm_ws/ego-planner-swarm
@@ -43,4 +44,4 @@ RUN echo 'alias cb="catkin build"' >> ~/.bashrc && \
       echo 'alias py="python"' >> ~/.bashrc && \
       echo 'alias rvmd="roscd rmader && cd rviz_cfgs && rosrun rviz rviz -d rmader.rviz"' >> ~/.bashrc && \
       echo 'alias tks="tmux kill-server"' >> ~/.bashrc
-RUN mkdir -p /home/data/ego_swarm
+RUN mkdir -p /home/kota/data/ego_swarm
