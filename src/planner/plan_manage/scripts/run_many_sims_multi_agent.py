@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     for cd in cd_list:
         cd_in_s = cd/1000;
-        folder_bags="/home/data/ego_swarm/bags/cd"+str(cd)+"ms"
+        folder_bags="/home/kota/data/ego_swarm/bags/cd"+str(cd)+"ms"
         # folder_csv="/home/data/ego_swarm_data/csv/cd"+str(cd)+"ms"
 
         # create directy if not exists

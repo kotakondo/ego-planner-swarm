@@ -30,7 +30,7 @@ if __name__ == '__main__':
         collision_cnt = 0
 
         # home_dir = "/media/kota/T7/data/ego_sw/arm_data"
-        home_dir = "/home/data/ego_swarm"
+        home_dir = "/home/kota/data/ego_swarm"
         source_dir = home_dir+"/bags/cd"+str(cd)+"ms" # change the source dir accordingly #10 agents
         
         source_len = len(source_dir)

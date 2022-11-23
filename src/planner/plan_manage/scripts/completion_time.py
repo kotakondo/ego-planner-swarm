@@ -31,7 +31,7 @@ if __name__ == '__main__':
         box_plot_list = [] 
 
         # home_dir = "/media/kota/T7/data/ego_swarm_data"
-        home_dir = "/home/data/ego_swarm"
+        home_dir = "/home/kota/data/ego_swarm"
 
         # source directory
         source_dir = home_dir+"/bags/cd"+str(cd)+"ms" # change the source dir accordingly #10 agents
