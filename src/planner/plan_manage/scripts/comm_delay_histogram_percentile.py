@@ -80,18 +80,18 @@ if __name__ == '__main__':
         ax = fig.add_subplot()
         n, bins, patches = plt.hist(x=comm_delay, color="blue", edgecolor = 'black')
         # plt.axvline(x=dc/1000, color="red")
-        if cd == 50:
-            ax.set_xticks(np.arange(0,0.150,0.025))
-            ax.set_xticklabels(np.arange(0,150,25))
-        elif cd == 100:
-            ax.set_xticks(np.arange(0,0.200,0.025))
-            ax.set_xticklabels(np.arange(0,200,25))
-        elif cd == 200:
-            ax.set_xticks(np.arange(0,0.300,0.025))
-            ax.set_xticklabels(np.arange(0,300,25))
-        elif cd == 300:
-            ax.set_xticks(np.arange(0,0.400,0.025))
-            ax.set_xticklabels(np.arange(0,400,25))
+        # if cd == 50:
+        #     ax.set_xticks(np.arange(0,0.150,0.025))
+        #     ax.set_xticklabels(np.arange(0,150,25))
+        # elif cd == 100:
+        #     ax.set_xticks(np.arange(0,0.200,0.025))
+        #     ax.set_xticklabels(np.arange(0,200,25))
+        # elif cd == 200:
+        #     ax.set_xticks(np.arange(0,0.300,0.025))
+        #     ax.set_xticklabels(np.arange(0,300,25))
+        # elif cd == 300:
+        #     ax.set_xticks(np.arange(0,0.400,0.025))
+        #     ax.set_xticklabels(np.arange(0,400,25))
         # plt.rcParams["font.family"] = "Times New Roman"
         plt.grid(axis='y', color='black', alpha=0.2)
         plt.title('Comm delay histogram \n max comm_delay is '+str(round(max_comm_delay*1000))+' [ms]')
@@ -105,8 +105,5 @@ if __name__ == '__main__':
 
         # in case you wanna calculate the value of q-th percentile
         # print("----------------------------------------------------------------------------------")
-        for q in range(100,0,-25):
-            try:
-                os.system('echo "'+str(q)+'-th : '+ str(round(numpy.percentile(comm_delay_arr, q)*1000,2)) + 'ms" >> '+home_dir+'/comm_delay_percentile.txt')
-            except:
-                pass
+        for q in range(100,0,-1):
+            os.system('echo "'+str(q)+'-th : '+ str(round(numpy.percentile(comm_delay_arr, q)*1000,2)) + 'ms" >> '+home_dir+'/comm_delay_percentile.txt')
