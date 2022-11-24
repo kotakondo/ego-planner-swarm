@@ -10,7 +10,7 @@ RUN apt-get update && \
       apt-get install ros-noetic-catkin && \
       apt-get autoremove -y && \
       apt-get install python3-pip -y && \
-      apt-get install python-scipy && \
+      apt-get install python3-scipy && \
       pip3 install -U bagpy && \
       pip3 install --upgrade numpy && \
       pip3 install python-dateutil==2.8.2 && \
