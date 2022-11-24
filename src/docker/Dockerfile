@@ -1,7 +1,7 @@
 FROM ros:noetic
 
 LABEL Maintainer="Kota Kondo <kkondo@mit.edu>" \
-      Description="Ubuntu 20.04, ROS Noetic for EGO Swarm"
+      Description="Ubuntu 20.04, ROS Noetic for EGO-Swarm"
 
 RUN apt-get update && \
       apt-get upgrade -y && \
