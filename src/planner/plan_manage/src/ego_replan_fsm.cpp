@@ -687,7 +687,7 @@ void EGOReplanFSM::execFSMCallback(const ros::TimerEvent &e)
         if ((end_pt_ - pos).norm() < 0.1)
         {
           is_goal_reached_ = true;  // used for commdelay
-          ros::shutdown()
+          ros::shutdown();
         }
 
         if (t_cur > info->duration_ - 1e-2)
