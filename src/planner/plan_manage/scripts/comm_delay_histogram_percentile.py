@@ -35,8 +35,8 @@ if __name__ == '__main__':
 
         figname = '/cd'+str(cd)+'_comm_delay_histogram.png'
 
-        # home_dir = "/media/kota/T7/data/ego_swarm_data"
-        home_dir = "/home/kota/data/ego_swarm"
+        home_dir = "/media/kota/T7/rmader_ral/ego_swarm"
+        # home_dir = "/home/kota/data/ego_swarm"
         source_dir = home_dir+"/bags" # change the source dir accordingly #10 agents 
         source_bags = source_dir + "/cd"+str(cd)+"ms/*.bag" # change the source dir accordingly #10 agents
 
@@ -55,13 +55,17 @@ if __name__ == '__main__':
 
             b = bagreader(rosbag[i], verbose=False);
             
-            for i in range(num_of_agents):
-                log_data = b.message_by_topic("/drone_"+str(i)+"_ego_planner_node/comm_delay")
+            for k in range(num_of_agents):
+                log_data = b.message_by_topic("/drone_"+str(k)+"_ego_planner_node/comm_delay")
                 try:
                     log = pd.read_csv(log_data)
 
                     for j in range(len(log.comm_delay)):
                         comm_delay.append(log.comm_delay[j])
+                        if log.comm_delay[j] > (cd+100)/1000:
+                            print(rosbag[i])
+                            print("drone"+str(k))
+                            print(str(log.comm_delay[j]*1000)+'ms')
                 except:
                     pass
 
