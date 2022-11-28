@@ -3,9 +3,10 @@
 
 namespace ego_planner
 {
-void EGOReplanFSM::init(ros::NodeHandle &nh)
+void EGOReplanFSM::init(ros::NodeHandle &nh, ros::NodeHandle &nh1)
 {
   nh_ = nh;
+  nh1_ = nh1;
   current_wp_ = 0;
   exec_state_ = FSM_EXEC_STATE::INIT;
   have_target_ = false;
@@ -267,7 +268,7 @@ void EGOReplanFSM::CommDelayBroadcastBsplineCallback(const traj_utils::BsplinePt
 {
   alltrajs_.push_back(msg);
   ros::Timer alltrajs_timer =
-      nh_.createTimer(ros::Duration(commdelay_), &EGOReplanFSM::BroadcastBsplineCallback, this, true);
+      nh1_.createTimer(ros::Duration(commdelay_), &EGOReplanFSM::BroadcastBsplineCallback, this, true);
   // std::cout << commdelay_ << std::endl;
   alltrajsTimers_.push_back(alltrajs_timer);
 }

@@ -95,6 +95,7 @@ private:
 
   /* node handle */
   ros::NodeHandle nh_;
+  ros::NodeHandle nh1_;
 
   /* helper functions */
   bool callReboundReplan(bool flag_use_poly_init, bool flag_randomPolyTraj);  // front-end and back-end method
@@ -133,7 +134,7 @@ public:
   {
   }
 
-  void init(ros::NodeHandle &nh);
+  void init(ros::NodeHandle &nh, ros::NodeHandle &nh1);
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

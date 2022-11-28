@@ -7,13 +7,13 @@ using namespace ego_planner;
 
 int main(int argc, char **argv)
 {
-
   ros::init(argc, argv, "ego_planner_node");
   ros::NodeHandle nh("~");
+  ros::NodeHandle nh1("~");
 
   EGOReplanFSM rebo_replan;
 
-  rebo_replan.init(nh);
+  rebo_replan.init(nh, nh1);
 
   // ros::Duration(1.0).sleep();
   ros::spin();
