@@ -1,8 +1,9 @@
 FROM ros:noetic
 
 LABEL Maintainer="Kota Kondo <kkondo@mit.edu>" \
-      Description="Ubuntu 20.04, ROS Noetic for EGO-Swarm"
+      Description="Ubuntu 20.04, ROS Noetic for EGO Swarm"
 
+RUN rm -rf /var/lib/apt/lists/*
 RUN apt-get update && \
       apt-get upgrade -y && \
       apt-get install -q -y --no-install-recommends git tmux vim apt-utils && \
@@ -16,8 +17,7 @@ RUN apt-get update && \
       pip3 install python-dateutil==2.8.2 && \
       pip3 install scipy && \
       apt-get clean && \
-      apt-get install psmisc && \
-      rm -rf /var/lib/apt/lists/*
+      apt-get install psmisc
 
 # the code below is the replacement of "RUN bash src/rmader/install_and_compile.sh"
 #INSTALL CGAL v4.14.2
