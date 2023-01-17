@@ -30,8 +30,8 @@ if __name__ == '__main__':
         # this gives you 2d array, row gives you each sims data in corresponding dc
         box_plot_list = [] 
 
-        # home_dir = "/media/kota/T7/data/ego_swarm_data"
-        home_dir = "/home/kota/data/ego_swarm"
+        home_dir = "/media/kota/T7/rmader_ral/ego_swarm"
+        # home_dir = "/home/kota/data/ego_swarm"
 
         # source directory
         source_dir = home_dir+"/bags/cd"+str(cd)+"ms" # change the source dir accordingly #10 agents
@@ -40,35 +40,41 @@ if __name__ == '__main__':
         source_bags = source_dir + "/*.bag" # change the source dir accordingly
         rosbag_list = glob.glob(source_bags)
         rosbag_list.sort() #alphabetically order
-        rosbag = []
+        rosbags = []
 
         for bag in rosbag_list:
-            rosbag.append(bag)
+            rosbags.append(bag)
 
         # read ros bags
         completion_time_per_sim_list = []
-        completion_time_per_sim = 0.0
-        for i in range(len(rosbag)):
-            print('rosbag ' + str(rosbag[i]))
-            b = bagreader(rosbag[i], verbose=False)
-            sim_id = rosbag[i][source_len+5:source_len+7]
-            
-            # introduced goal_reached topic so no need to check actual_traj
+        for i in range(len(rosbags)):
+            print('rosbag ' + str(rosbags[i]))
+            start_time_initialized = False
+            finish_time_initialized = False
+            start_time = 0.0
+            finish_time = 0.0
+            for topic, msg, t in  rosbag.Bag(rosbags[i]).read_messages():
+                if topic == '/drone_0_ego_planner_node/goal_point':
+                    if not start_time_initialized:
+                        start_time = t.secs + t.nsecs/1e9
+                        print("start_time", start_time)
+                        start_time_initialized = True
+                    
+                if topic == '/goal_reached':
+                    if not finish_time_initialized:
+                        finish_time = t.secs + t.nsecs/1e9
+                        print("finish_time", finish_time)
+                        finish_time_initialized = True
 
-            try:
-                log_data = b.message_by_topic("/goal_reached")
-                log = pd.read_csv(log_data, usecols=["completion_time", "is_goal_reached"])
-                completion_time = log.completion_time.iloc[0]
-                # print('completion time ' + str(completion_time_agent))
-                print(completion_time)
+            if finish_time_initialized and start_time_initialized:
+                completion_time = finish_time - start_time
+                print("completion_time", completion_time)
                 completion_time_per_sim_list.append(completion_time)
-                box_plot_list.append(completion_time_per_sim_list)
-            except:
-                print("agents didn't reach goals")
 
         os.system('echo "'+source_dir+'" >> '+home_dir+'/completion_time.txt')
-        os.system('echo "max is '+str(round(max(completion_time_per_sim_list),2))+'s" >> '+home_dir+'/completion_time.txt')
         os.system('echo "ave is '+str(round(statistics.mean(completion_time_per_sim_list),2))+'s" >> '+home_dir+'/completion_time.txt')
+        os.system('echo "max is '+str(round(max(completion_time_per_sim_list),2))+'s" >> '+home_dir+'/completion_time.txt')
+        os.system('echo "min is '+str(round(min(completion_time_per_sim_list),2))+'s" >> '+home_dir+'/completion_time.txt')
         os.system('echo "------------------------------------------------------------" >> '+home_dir+'/completion_time.txt')
         
         # # plot
