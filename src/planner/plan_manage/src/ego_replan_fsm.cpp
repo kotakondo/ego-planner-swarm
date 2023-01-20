@@ -262,6 +262,26 @@ void EGOReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
   odom_orient_.z() = msg->pose.pose.orientation.z;
 
   have_odom_ = true;
+
+  // publish to tf
+
+  static tf2_ros::TransformBroadcaster br;
+  geometry_msgs::TransformStamped transformStamped;
+
+  transformStamped.header.stamp = ros::Time::now();
+  transformStamped.header.frame_id = "world";
+  transformStamped.child_frame_id =
+      string("/drone_") + std::to_string(planner_manager_->pp_.drone_id - 1) + string("_planning/swarm_trajs");
+
+  transformStamped.transform.translation.x = msg->pose.pose.position.x;
+  transformStamped.transform.translation.y = msg->pose.pose.position.y;
+  transformStamped.transform.translation.z = msg->pose.pose.position.z;
+  transformStamped.transform.rotation.x = msg->pose.pose.orientation.x;
+  transformStamped.transform.rotation.y = msg->pose.pose.orientation.y;
+  transformStamped.transform.rotation.z = msg->pose.pose.orientation.z;
+  transformStamped.transform.rotation.w = msg->pose.pose.orientation.w;
+
+  br.sendTransform(transformStamped);
 }
 
 void EGOReplanFSM::CommDelayBroadcastBsplineCallback(const traj_utils::BsplinePtr &msg)
