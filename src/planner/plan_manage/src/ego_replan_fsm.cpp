@@ -47,6 +47,7 @@ void EGOReplanFSM::init(ros::NodeHandle &nh, ros::NodeHandle &nh1)
   exec_timer_ = nh_.createTimer(ros::Duration(0.01), &EGOReplanFSM::execFSMCallback, this);
   safety_timer_ = nh_.createTimer(ros::Duration(0.05), &EGOReplanFSM::checkCollisionCallback, this);
   tf_timer_ = nh_.createTimer(ros::Duration(0.01), &EGOReplanFSM::tfCallback, this);
+  tf_timer_.stop();
 
   odom_sub_ = nh_.subscribe("odom_world", 1, &EGOReplanFSM::odometryCallback, this);
 
@@ -263,6 +264,11 @@ void EGOReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
   odom_orient_.z() = msg->pose.pose.orientation.z;
 
   have_odom_ = true;
+
+  if (have_odom_)
+  {
+    tf_timer_.start();
+  }
 }
 
 void EGOReplanFSM::tfCallback(const ros::TimerEvent &e)
