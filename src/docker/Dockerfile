@@ -47,3 +47,5 @@ RUN echo 'alias cb="catkin build"' >> ~/.bashrc && \
       echo 'alias rvmd="roscd rmader && cd rviz_cfgs && rosrun rviz rviz -d rmader.rviz"' >> ~/.bashrc && \
       echo 'alias tks="tmux kill-server"' >> ~/.bashrc
 RUN mkdir -p /home/kota/data/ego_swarm
+
+WORKDIR /home/kota/ego_swarm_ws/ego-planner-swarm/src/planner/plan_manage/scripts
