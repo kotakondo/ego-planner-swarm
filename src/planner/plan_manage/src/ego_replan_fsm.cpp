@@ -268,7 +268,7 @@ void EGOReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
   if (have_odom_ && !is_started_tf_timer_)
   {
     tf_timer_.start();
-    is_started_tf_timer_ = true
+    is_started_tf_timer_ = true;
   }
 }
 
