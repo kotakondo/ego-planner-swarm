@@ -72,6 +72,7 @@ private:
 
   /* planning data */
   bool have_trigger_, have_target_, have_odom_, have_new_target_, have_recv_pre_agent_;
+  bool is_started_tf_timer_ = false;
   FSM_EXEC_STATE exec_state_;
   int continously_called_times_{ 0 };
 
