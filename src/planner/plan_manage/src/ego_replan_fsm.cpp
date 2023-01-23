@@ -46,6 +46,7 @@ void EGOReplanFSM::init(ros::NodeHandle &nh, ros::NodeHandle &nh1)
   /* callback */
   exec_timer_ = nh_.createTimer(ros::Duration(0.01), &EGOReplanFSM::execFSMCallback, this);
   safety_timer_ = nh_.createTimer(ros::Duration(0.05), &EGOReplanFSM::checkCollisionCallback, this);
+  tf_timer_ = nh_.createTimer(ros::Duration(0.01), &EGOReplanFSM::tfCallback, this);
 
   odom_sub_ = nh_.subscribe("odom_world", 1, &EGOReplanFSM::odometryCallback, this);
 
@@ -262,24 +263,25 @@ void EGOReplanFSM::odometryCallback(const nav_msgs::OdometryConstPtr &msg)
   odom_orient_.z() = msg->pose.pose.orientation.z;
 
   have_odom_ = true;
+}
 
+void EGOReplanFSM::tfCallback(const ros::TimerEvent &e)
+{
   // publish to tf
-
   static tf2_ros::TransformBroadcaster br;
   geometry_msgs::TransformStamped transformStamped;
 
   transformStamped.header.stamp = ros::Time::now();
   transformStamped.header.frame_id = "world";
-  transformStamped.child_frame_id =
-      string("/drone_") + std::to_string(planner_manager_->pp_.drone_id - 1) + string("_planning/swarm_trajs");
+  transformStamped.child_frame_id = string("drone_") + std::to_string(planner_manager_->pp_.drone_id - 1);
 
-  transformStamped.transform.translation.x = msg->pose.pose.position.x;
-  transformStamped.transform.translation.y = msg->pose.pose.position.y;
-  transformStamped.transform.translation.z = msg->pose.pose.position.z;
-  transformStamped.transform.rotation.x = msg->pose.pose.orientation.x;
-  transformStamped.transform.rotation.y = msg->pose.pose.orientation.y;
-  transformStamped.transform.rotation.z = msg->pose.pose.orientation.z;
-  transformStamped.transform.rotation.w = msg->pose.pose.orientation.w;
+  transformStamped.transform.translation.x = odom_pos_(0);
+  transformStamped.transform.translation.y = odom_pos_(1);
+  transformStamped.transform.translation.z = odom_pos_(2);
+  transformStamped.transform.rotation.x = odom_orient_.x();
+  transformStamped.transform.rotation.y = odom_orient_.y();
+  transformStamped.transform.rotation.z = odom_orient_.z();
+  transformStamped.transform.rotation.w = odom_orient_.w();
 
   br.sendTransform(transformStamped);
 }
