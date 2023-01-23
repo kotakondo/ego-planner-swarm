@@ -290,6 +290,11 @@ void EGOReplanFSM::tfCallback(const ros::TimerEvent &e)
   transformStamped.transform.rotation.w = odom_orient_.w();
 
   br.sendTransform(transformStamped);
+
+  if (is_goal_reached_)
+  {
+    tf_timer_.stop();
+  }
 }
 
 void EGOReplanFSM::CommDelayBroadcastBsplineCallback(const traj_utils::BsplinePtr &msg)
