@@ -48,6 +48,7 @@ RUN sudo apt-get install -y ros-${ROS_DISTRO}-rqt-graph
 RUN sudo apt-get install -y libignition-math4-dev
 RUN sudo apt install -y cmake
 RUN apt-get install -y ros-${ROS_DISTRO}-roslint
+RUN apt-get install -y ros-${ROS_DISTRO}-rqt*
 RUN python3 -m pip install pyquaternion
 
 # Set up Ego-Swarm workspace
@@ -56,30 +57,31 @@ WORKDIR /home/kota/ego_swarm_ws/src
 
 # Install dependencies
 # Livox-SDK2
-# WORKDIR /home/kota/
-# RUN git clone https://github.com/Livox-SDK/Livox-SDK2.git
-# WORKDIR /home/kota/Livox-SDK2
-# RUN mkdir build
-# WORKDIR /home/kota/Livox-SDK2/build
-# RUN cmake .. && make -j
-# RUN sudo make install
+WORKDIR /home/kota/
+RUN git clone https://github.com/Livox-SDK/Livox-SDK2.git
+WORKDIR /home/kota/Livox-SDK2
+RUN mkdir build
+WORKDIR /home/kota/Livox-SDK2/build
+RUN cmake .. && make -j
+RUN sudo make install
 
-# # acl-gazebo
-# WORKDIR /home/kota/ego_swarm_ws/src
-# ARG DUMMY=unknown
-# RUN DUMMY=${DUMMY} git clone https://gitlab.com/mit-acl/lab/acl-gazebo.git
-# WORKDIR /home/kota/ego_swarm_ws/src/acl-gazebo
-# RUN git checkout noetic
-# WORKDIR /home/kota/ego_swarm_ws/src
-# # snapstack_msgs
-# RUN git clone https://gitlab.com/mit-acl/fsw/snap-stack/snapstack_msgs.git
+# acl-gazebo
+WORKDIR /home/kota/ego_swarm_ws/src
+ARG DUMMY=unknown
+RUN DUMMY=${DUMMY} git clone https://gitlab.com/mit-acl/lab/acl-gazebo.git
+WORKDIR /home/kota/ego_swarm_ws/src/acl-gazebo
+RUN git checkout ego_swarm_noetic
+WORKDIR /home/kota/ego_swarm_ws/src
+# snapstack_msgs
+RUN git clone https://gitlab.com/mit-acl/fsw/snap-stack/snapstack_msgs.git
 
 # Install Ego-Swarm
 WORKDIR /home/kota/ego_swarm_ws/src
+ARG DUMMY=unknown
 RUN DUMMY=${DUMMY} git clone https://github.com/kotakondo/ego-planner-swarm.git
 # Build Ego-Swarm
 WORKDIR /home/kota/ego_swarm_ws
-RUN bash -c "source /opt/ros/noetic/setup.bash && catkin_make -DCMAKE_BUILD_TYPE=Release -j1"
+RUN bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
 
 # livox_ros_driver2
 RUN mkdir -p /home/kota/livox_ros_ws/src
@@ -116,6 +118,9 @@ RUN echo "alias roscd='cd /home/kota/ego_swarm_ws'" >> ~/.bashrc
 RUN echo "alias cb='roscd && catkin build && sb'" >> ~/.bashrc
 RUN echo "alias ss='roscd && source devel/setup.bash'" >> ~/.bashrc
 RUN echo "alias cbf='clear && roscd && catkin build && ss'" >> ~/.bashrc
+
+# Go to the ego_swarm_ws
+WORKDIR /home/kota/ego_swarm_ws
 
 # Set up Entry Point
 # ##########################################
