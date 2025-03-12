@@ -22,6 +22,11 @@
 #include <message_filters/sync_policies/exact_time.h>
 #include <message_filters/time_synchronizer.h>
 
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
+#include <pcl_ros/transforms.h>
+#include <pcl_conversions/pcl_conversions.h>
+
 #include <plan_env/raycast.h>
 
 #define logit(x) (log((x) / (1 - (x))))
@@ -145,6 +150,9 @@ public:
   ~GridMap() {}
 
   enum { POSE_STAMPED = 1, ODOMETRY = 2, INVALID_IDX = -10000 };
+
+  // tf listener
+  tf::TransformListener tf_listener_;
 
   // occupancy map management
   void resetBuffer();
