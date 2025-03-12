@@ -1,0 +1,15 @@
+session_name: ego_swarm
+windows:
+  - window_name: ego_swarm
+    layout: tiled
+    shell_command_before:
+      - source /home/kota/ego_swarm_ws/devel/setup.bash
+      - source /home/kota/livox_ros_ws/devel/setup.bash
+      - source /home/kota/mid360_ws/devel/setup.bash
+    panes:
+      - roscore
+      # - roslaunch --wait acl_sim start_world.launch
+      # - roslaunch --wait acl_sim perfect_tracker_and_sim.launch x:=0.0 y:=0.0 z:=1.0 yaw:=0.0
+      - roslaunch --wait ego_planner rviz.launch
+      - roslaunch --wait ego_planner single_run_in_sim.launch
+
