@@ -4,12 +4,12 @@ windows:
     layout: tiled
     shell_command_before:
       - source /home/kota/ego_swarm_ws/devel/setup.bash
-      - source /home/kota/livox_ros_ws/devel/setup.bash
       - source /home/kota/mid360_ws/devel/setup.bash
     panes:
       - roscore
       - roslaunch --wait acl_sim start_world.launch
-      - roslaunch --wait acl_sim perfect_tracker_and_sim.launch x:=0.0 y:=0.0 z:=1.0 yaw:=0.0
+      - roslaunch --wait acl_sim perfect_tracker_and_sim.launch x:=0.0 y:=0.0 z:=3.0 yaw:=0.0
       - roslaunch --wait ego_planner rviz.launch
-      - roslaunch --wait ego_planner single_run_in_sim.launch
+      - roslaunch --wait ego_planner single_run_in_sim.launch simulation_number:=5
+      # - rostopic pub /move_base_simple/goal geometry_msgs/PoseStamped '{header: {frame_id: "world"}, pose: {position: {x: 105.0, y: 0.0, z: 3.0}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}}}' -1
 

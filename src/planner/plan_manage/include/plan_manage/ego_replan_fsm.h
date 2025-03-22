@@ -112,14 +112,13 @@ namespace ego_planner
     bool checkCollision();
     void publishSwarmTrajs(bool startup_pub);
 
-  public:
-    EGOReplanFSM(/* args */)
-    {
-    }
-    ~EGOReplanFSM()
-    {
-    }
+    /* Computation time*/
+    int simulation_number_ = 100;
+    std::vector<double> time_replan_;
 
+  public:
+    EGOReplanFSM(/* args */) {}
+    ~EGOReplanFSM();
     void init(ros::NodeHandle &nh);
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
