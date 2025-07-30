@@ -15,6 +15,12 @@
 namespace ego_planner
 {
 
+  struct ReplanResult {
+    bool   success = false;    ///< did the optimizer converge?
+    double init_time_ms = -10000.0;  ///< time spent in “computeInitState” + constraint setup
+    double opt_time_ms = -10000.0;   ///< time spent in “optimizeTrajectory”
+  };
+
   // Fast Planner Manager
   // Key algorithms of mapping and planning are called
 
@@ -28,7 +34,7 @@ namespace ego_planner
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     /* main planning interface */
-    bool reboundReplan(Eigen::Vector3d start_pt, Eigen::Vector3d start_vel, Eigen::Vector3d start_acc,
+    ReplanResult reboundReplan(Eigen::Vector3d start_pt, Eigen::Vector3d start_vel, Eigen::Vector3d start_acc,
                        Eigen::Vector3d end_pt, Eigen::Vector3d end_vel, bool flag_polyInit, bool flag_randomPolyTraj);
     bool EmergencyStop(Eigen::Vector3d stop_pos);
     bool planGlobalTraj(const Eigen::Vector3d &start_pos, const Eigen::Vector3d &start_vel, const Eigen::Vector3d &start_acc,

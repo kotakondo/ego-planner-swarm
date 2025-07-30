@@ -90,8 +90,10 @@ namespace ego_planner
       cout << "Wrong target_type_ value! target_type_=" << target_type_ << endl;
 
 
-    // Initilize the computation time vector
-    time_replan_.clear();
+    // Initilize the data storage vectors
+    success_vec_.clear();
+    initi_time_vec_.clear();
+    opt_time_vec_.clear();
 
   }
 
@@ -102,14 +104,18 @@ namespace ego_planner
     std::cout << "writing computation times to csv file" << std::endl;
     // Open (or create) a CSV file for writing (append mode)
     std::ofstream csvFile;
-    csvFile.open("/home/kota/data/computation_times_num_" + std::to_string(simulation_number_) + ".csv", std::ios::app);
+    csvFile.open("/home/kota/data/results_num_" + std::to_string(simulation_number_) + ".csv", std::ios::app);
     if (!csvFile.is_open()) {
         std::cerr << "Error: Could not open CSV file for writing." << std::endl;
     }
     csvFile << "ComputationTime (micro seconds) for sim number " << simulation_number_ << std::endl;
-    for (int i = 0; i < time_replan_.size(); i++) {
-        csvFile << time_replan_[i] << std::endl;
+    csvFile << "Success, Init Comp, Opt Comp (ms seconds) for sim number " << simulation_number_ << std::endl;
+
+    assert(success_vec_.size() == initi_time_vec_.size() && success_vec_.size() == opt_time_vec_.size());
+    for (size_t i = 0; i < success_vec_.size(); i++) {
+        csvFile << success_vec_[i] << ", " << initi_time_vec_[i] << ", " << opt_time_vec_[i] << std::endl;
     }
+
     csvFile.close();
     std::cout << "done writing computation times to csv file" << std::endl;
 
@@ -511,13 +517,9 @@ namespace ego_planner
         {
 
           // Compute total replanning time (micro seconds)
-          auto start = std::chrono::steady_clock::now();
           bool success = planFromGlobalTraj(10); // zx-todo
           if (success)
           {
-            auto end = std::chrono::steady_clock::now();
-            double elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-            time_replan_.push_back(elapsed_us);
             changeFSMExecState(EXEC_TRAJ, "FSM");
 
             publishSwarmTrajs(true);
@@ -544,16 +546,9 @@ namespace ego_planner
       // start_yaw_(0)         = atan2(rot_x(1), rot_x(0));
       // start_yaw_(1) = start_yaw_(2) = 0.0;
 
-      // Compute total replanning time (micro seconds)
-      auto start = std::chrono::steady_clock::now();
-
       bool success = planFromGlobalTraj(10); // zx-todo
       if (success)
       {
-        auto end = std::chrono::steady_clock::now();
-        double elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        time_replan_.push_back(elapsed_us);
-
         changeFSMExecState(EXEC_TRAJ, "FSM");
         flag_escape_emergency_ = true;
         publishSwarmTrajs(false);
@@ -568,9 +563,6 @@ namespace ego_planner
     case REPLAN_TRAJ:
     {
 
-      // Compute total replanning time (micro seconds)
-      auto start = std::chrono::steady_clock::now();
-
       if (planFromCurrentTraj(1))
       {
         changeFSMExecState(EXEC_TRAJ, "FSM");
@@ -580,10 +572,6 @@ namespace ego_planner
       {
         changeFSMExecState(REPLAN_TRAJ, "FSM");
       }
-
-      auto end = std::chrono::steady_clock::now();
-      double elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-      time_replan_.push_back(elapsed_us);
 
       break;
     }
@@ -675,7 +663,13 @@ namespace ego_planner
 
     for (int i = 0; i < trial_times; i++)
     {
-      if (callReboundReplan(true, flag_random_poly_init))
+
+      ReplanResult res = callReboundReplan(true, flag_random_poly_init);
+      success_vec_.push_back(res.success);
+      initi_time_vec_.push_back(res.init_time_ms);
+      opt_time_vec_.push_back(res.opt_time_ms);
+
+      if (res.success)
       {
         return true;
       }
@@ -696,17 +690,34 @@ namespace ego_planner
     start_vel_ = info->velocity_traj_.evaluateDeBoorT(t_cur);
     start_acc_ = info->acceleration_traj_.evaluateDeBoorT(t_cur);
 
-    bool success = callReboundReplan(false, false);
+    ReplanResult res;
+    res = callReboundReplan(false, false);
+
+    success_vec_.push_back(res.success);
+    initi_time_vec_.push_back(res.init_time_ms);
+    opt_time_vec_.push_back(res.opt_time_ms);
+
+    bool success = res.success;
+
 
     if (!success)
     {
-      success = callReboundReplan(true, false);
+      res = callReboundReplan(true, false);
+      success_vec_.push_back(res.success);
+      initi_time_vec_.push_back(res.init_time_ms);
+      opt_time_vec_.push_back(res.opt_time_ms);
+      success = res.success;
       //changeFSMExecState(EXEC_TRAJ, "FSM");
       if (!success)
       {
         for (int i = 0; i < trial_times; i++)
         {
-          success = callReboundReplan(true, true);
+
+          res = callReboundReplan(true, true);
+          success_vec_.push_back(res.success);
+          initi_time_vec_.push_back(res.init_time_ms);
+          opt_time_vec_.push_back(res.opt_time_ms);
+          success = res.success;
           if (success)
             break;
         }
@@ -798,13 +809,13 @@ namespace ego_planner
     }
   }
 
-  bool EGOReplanFSM::callReboundReplan(bool flag_use_poly_init, bool flag_randomPolyTraj)
+  ReplanResult EGOReplanFSM::callReboundReplan(bool flag_use_poly_init, bool flag_randomPolyTraj)
   {
 
     getLocalTarget();
 
-    bool plan_and_refine_success =
-        planner_manager_->reboundReplan(start_pt_, start_vel_, start_acc_, local_target_pt_, local_target_vel_, (have_new_target_ || flag_use_poly_init), flag_randomPolyTraj);
+    ReplanResult res = planner_manager_->reboundReplan(start_pt_, start_vel_, start_acc_, local_target_pt_, local_target_vel_, (have_new_target_ || flag_use_poly_init), flag_randomPolyTraj);
+    bool plan_and_refine_success = res.success;
     have_new_target_ = false;
 
     cout << "refine_success=" << plan_and_refine_success << endl;
@@ -847,7 +858,7 @@ namespace ego_planner
       visualization_->displayOptimalList(info->position_traj_.get_control_points(), 0);
     }
 
-    return plan_and_refine_success;
+    return res;
   }
 
   void EGOReplanFSM::publishSwarmTrajs(bool startup_pub)

@@ -46,10 +46,14 @@ namespace ego_planner
 
   // SECTION rebond replanning
 
-  bool EGOPlannerManager::reboundReplan(Eigen::Vector3d start_pt, Eigen::Vector3d start_vel,
+  ReplanResult EGOPlannerManager::reboundReplan(Eigen::Vector3d start_pt, Eigen::Vector3d start_vel,
                                         Eigen::Vector3d start_acc, Eigen::Vector3d local_target_pt,
                                         Eigen::Vector3d local_target_vel, bool flag_polyInit, bool flag_randomPolyTraj)
   {
+    ReplanResult res;
+    using Clock = std::chrono::steady_clock;
+    auto t_start = Clock::now();
+
     static int count = 0;
     printf("\033[47;30m\n[drone %d replan %d]==============================================\033[0m\n", pp_.drone_id, count++);
     // cout.precision(3);
@@ -60,13 +64,11 @@ namespace ego_planner
     {
       cout << "Close to goal" << endl;
       continous_failures_count_++;
-      return false;
+      return res;
     }
 
     bspline_optimizer_->setLocalTargetPt(local_target_pt);
 
-    ros::Time t_start = ros::Time::now();
-    ros::Duration t_init, t_opt, t_refine;
 
     /*** STEP 1: INIT ***/
     double ts = (start_pt - local_target_pt).norm() > 0.1 ? pp_.ctrl_pt_dist / pp_.max_vel_ * 1.5 : pp_.ctrl_pt_dist / pp_.max_vel_ * 5; // pp_.ctrl_pt_dist / pp_.max_vel_ is too tense, and will surely exceed the acc/vel limits
@@ -174,7 +176,7 @@ namespace ego_planner
             {
               ROS_ERROR("pseudo_arc_length is empty, return!");
               continous_failures_count_++;
-              return false;
+              return res;
             }
           }
         }
@@ -221,8 +223,8 @@ namespace ego_planner
     vector<std::pair<int, int>> segments;
     segments = bspline_optimizer_->initControlPoints(ctrl_pts, true);
 
-    t_init = ros::Time::now() - t_start;
-    t_start = ros::Time::now();
+    res.init_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - t_start).count();
+    t_start = Clock::now();
 
     /*** STEP 2: OPTIMIZE ***/
     bool flag_step_1_success = false;
@@ -264,14 +266,14 @@ namespace ego_planner
         }
       }
 
-      t_opt = ros::Time::now() - t_start;
+      res.opt_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - t_start).count();
 
       visualization_->displayMultiInitPathList(vis_trajs, 0.2); // This visuallization will take up several milliseconds.
     }
     else
     {
       flag_step_1_success = bspline_optimizer_->BsplineOptimizeTrajRebound(ctrl_pts, ts);
-      t_opt = ros::Time::now() - t_start;
+      res.opt_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - t_start).count();
       //static int vis_id = 0;
       visualization_->displayInitPathList(point_set, 0.2, 0);
     }
@@ -281,10 +283,10 @@ namespace ego_planner
     {
       visualization_->displayOptimalList(ctrl_pts, 0);
       continous_failures_count_++;
-      return false;
+      return res;
     }
 
-    t_start = ros::Time::now();
+    t_start = Clock::now();
 
     UniformBspline pos = UniformBspline(ctrl_pts, 3, ts);
     pos.setPhysicalLimits(pp_.max_vel_, pp_.max_acc_, pp_.feasibility_tolerance_);
@@ -310,7 +312,7 @@ namespace ego_planner
       {
         printf("\033[34mThis refined trajectory hits obstacles. It doesn't matter if appeares occasionally. But if continously appearing, Increase parameter \"lambda_fitness\".\n\033[0m");
         continous_failures_count_++;
-        return false;
+        return res;
       }
     }
     else
@@ -323,20 +325,21 @@ namespace ego_planner
       }
     }
 
-    t_refine = ros::Time::now() - t_start;
+    // t_refine = ros::Time::now() - t_start;
 
     // save planned results
     updateTrajInfo(pos, ros::Time::now());
 
-    static double sum_time = 0;
-    static int count_success = 0;
-    sum_time += (t_init + t_opt + t_refine).toSec();
-    count_success++;
-    cout << "total time:\033[42m" << (t_init + t_opt + t_refine).toSec() << "\033[0m,optimize:" << (t_init + t_opt).toSec() << ",refine:" << t_refine.toSec() << ",avg_time=" << sum_time / count_success << endl;
+    // static double sum_time = 0;
+    // static int count_success = 0;
+    // sum_time += (t_init + t_opt + t_refine).toSec();
+    // count_success++;
+    // cout << "total time:\033[42m" << (t_init + t_opt + t_refine).toSec() << "\033[0m,optimize:" << (t_init + t_opt).toSec() << ",refine:" << t_refine.toSec() << ",avg_time=" << sum_time / count_success << endl;
 
     // success. YoY
     continous_failures_count_ = 0;
-    return true;
+    res.success = true;
+    return res;
   }
 
   bool EGOPlannerManager::EmergencyStop(Eigen::Vector3d stop_pos)

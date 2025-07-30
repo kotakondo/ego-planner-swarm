@@ -86,7 +86,7 @@ namespace ego_planner
     ros::Publisher replan_pub_, new_pub_, bspline_pub_, data_disp_pub_, swarm_trajs_pub_, broadcast_bspline_pub_;
 
     /* helper functions */
-    bool callReboundReplan(bool flag_use_poly_init, bool flag_randomPolyTraj); // front-end and back-end method
+    ReplanResult callReboundReplan(bool flag_use_poly_init, bool flag_randomPolyTraj); // front-end and back-end method
     bool callEmergencyStop(Eigen::Vector3d stop_pos);                          // front-end and back-end method
     bool planFromGlobalTraj(const int trial_times = 1);
     bool planFromCurrentTraj(const int trial_times = 1);
@@ -114,7 +114,9 @@ namespace ego_planner
 
     /* Computation time*/
     int simulation_number_ = 100;
-    std::vector<double> time_replan_;
+    std::vector<bool> success_vec_;
+    std::vector<double> initi_time_vec_;
+    std::vector<double> opt_time_vec_;
 
   public:
     EGOReplanFSM(/* args */) {}
