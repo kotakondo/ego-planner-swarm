@@ -75,7 +75,7 @@ def launch_simulation(sim_num, env_source):
     perfect_tracker_cmd = f"{env_source} && roslaunch --wait acl_sim perfect_tracker_and_sim.launch x:=0.0 y:=0.0 z:=3.0 yaw:=0.0"
     rviz_cmd = f"{env_source} && roslaunch --wait ego_planner rviz.launch"
     single_run_cmd = f"{env_source} && roslaunch --wait ego_planner single_run_in_sim.launch simulation_number:={sim_num}"
-    goal_pub_cmd = f"""{env_source} && sleep 10 && rostopic pub /move_base_simple/goal geometry_msgs/PoseStamped '{{header: {{frame_id: "world"}}, pose: {{position: {{x: 105.0, y: 0.0, z: 3.0}}, orientation: {{x: 0.0, y: 0.0, z: 0.0, w: 1.0}}}}}}' -1"""
+    goal_pub_cmd = f"""{env_source} && sleep 10 && rostopic pub /move_base_simple/goal geometry_msgs/PoseStamped '{{header: {{frame_id: "world"}}, pose: {{position: {{x: 305.0, y: 0.0, z: 3.0}}, orientation: {{x: 0.0, y: 0.0, z: 0.0, w: 1.0}}}}}}' -1"""
     bag_file = f"/home/kota/data/ego_swarm_num_{sim_num}.bag"
     # rosbag_cmd = f"{env_source} && rosbag record /tf /tf_static /rosout /rosout_agg /drone_0_ego_planner_node/optimal_list /drone_0_odom_visualization/path /drone_0_ego_planner_node/grid_map/occupancy_inflate /drone_0_odom_visualization/robot /SQ01s/camera/cloud -O {bag_file}"
     rosbag_cmd = f"{env_source} && rosbag record /tf /tf_static /rosout /rosout_agg /drone_0_ego_planner_node/optimal_list /drone_0_odom_visualization/path /drone_0_ego_planner_node/grid_map/occupancy_inflate /drone_0_odom_visualization/robot /SQ01s/state /drone_0_planning/pos_cmd /move_base_simple/goal -O {bag_file}"
