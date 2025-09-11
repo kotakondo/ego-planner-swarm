@@ -156,7 +156,7 @@ if __name__ == "__main__":
                 goal_reached = True
                 break
             time.sleep(1)
-
+        
         travel_time = time.time() - sim_start_time
         if goal_reached:
             status = "reached"

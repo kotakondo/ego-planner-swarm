@@ -53,6 +53,7 @@ namespace ego_planner
     ReplanResult res;
     using Clock = std::chrono::steady_clock;
     auto t_start = Clock::now();
+    auto t_total_start = Clock::now();
 
     static int count = 0;
     printf("\033[47;30m\n[drone %d replan %d]==============================================\033[0m\n", pp_.drone_id, count++);
@@ -325,7 +326,7 @@ namespace ego_planner
       }
     }
 
-    // t_refine = ros::Time::now() - t_start;
+    res.refine_time_ms = std::chrono::duration<double, std::milli>(Clock::now() - t_start).count();
 
     // save planned results
     updateTrajInfo(pos, ros::Time::now());

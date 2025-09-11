@@ -94,6 +94,7 @@ namespace ego_planner
     success_vec_.clear();
     initi_time_vec_.clear();
     opt_time_vec_.clear();
+    refine_time_vec_.clear();
 
   }
 
@@ -111,9 +112,9 @@ namespace ego_planner
     csvFile << "ComputationTime (micro seconds) for sim number " << simulation_number_ << std::endl;
     csvFile << "Success, Init Comp, Opt Comp (ms seconds) for sim number " << simulation_number_ << std::endl;
 
-    assert(success_vec_.size() == initi_time_vec_.size() && success_vec_.size() == opt_time_vec_.size());
+    assert(success_vec_.size() == initi_time_vec_.size() && success_vec_.size() == opt_time_vec_.size() && success_vec_.size() == refine_time_vec_.size());
     for (size_t i = 0; i < success_vec_.size(); i++) {
-        csvFile << success_vec_[i] << ", " << initi_time_vec_[i] << ", " << opt_time_vec_[i] << std::endl;
+        csvFile << success_vec_[i] << ", " << initi_time_vec_[i] << ", " << opt_time_vec_[i] << ", " << refine_time_vec_[i] << std::endl;
     }
 
     csvFile.close();
@@ -668,6 +669,7 @@ namespace ego_planner
       success_vec_.push_back(res.success);
       initi_time_vec_.push_back(res.init_time_ms);
       opt_time_vec_.push_back(res.opt_time_ms);
+      refine_time_vec_.push_back(res.refine_time_ms);
 
       if (res.success)
       {
@@ -696,6 +698,7 @@ namespace ego_planner
     success_vec_.push_back(res.success);
     initi_time_vec_.push_back(res.init_time_ms);
     opt_time_vec_.push_back(res.opt_time_ms);
+    refine_time_vec_.push_back(res.refine_time_ms);
 
     bool success = res.success;
 
@@ -706,6 +709,8 @@ namespace ego_planner
       success_vec_.push_back(res.success);
       initi_time_vec_.push_back(res.init_time_ms);
       opt_time_vec_.push_back(res.opt_time_ms);
+      refine_time_vec_.push_back(res.refine_time_ms);
+
       success = res.success;
       //changeFSMExecState(EXEC_TRAJ, "FSM");
       if (!success)
@@ -717,6 +722,7 @@ namespace ego_planner
           success_vec_.push_back(res.success);
           initi_time_vec_.push_back(res.init_time_ms);
           opt_time_vec_.push_back(res.opt_time_ms);
+          refine_time_vec_.push_back(res.refine_time_ms);
           success = res.success;
           if (success)
             break;

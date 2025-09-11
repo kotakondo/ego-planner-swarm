@@ -117,6 +117,7 @@ namespace ego_planner
     std::vector<bool> success_vec_;
     std::vector<double> initi_time_vec_;
     std::vector<double> opt_time_vec_;
+    std::vector<double> refine_time_vec_;
 
   public:
     EGOReplanFSM(/* args */) {}

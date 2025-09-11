@@ -198,7 +198,7 @@ def save_plots(bag_file, results, v_constraint=10.0, a_constraint=20.0, j_constr
 def main():
     if len(sys.argv) < 4:
         print("Usage: {} <bag_folder> <v_max> <a_max> <j_max>".format(sys.argv[0]))
-        print("Example: python3 ../ego_swarm_ws/src/ego-planner-swarm/docker/analyze_bag.py /home/kota/data 2.0 5.0 30.0")
+        print("Example: python3 ../ego_swarm_ws/src/ego-planner-swarm/docker/analyze_bag.py /home/kota/data 2.0 10.0 30.0")
         sys.exit(1)
 
     bag_folder = sys.argv[1]

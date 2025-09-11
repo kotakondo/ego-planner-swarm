@@ -17,8 +17,9 @@ namespace ego_planner
 
   struct ReplanResult {
     bool   success = false;    ///< did the optimizer converge?
-    double init_time_ms = -10000.0;  ///< time spent in “computeInitState” + constraint setup
-    double opt_time_ms = -10000.0;   ///< time spent in “optimizeTrajectory”
+    double init_time_ms = 0.0;  ///< time spent in “computeInitState” + constraint setup
+    double opt_time_ms = 0.0;   ///< time spent in “optimizeTrajectory”
+    double refine_time_ms = 0.0; ///< total time spent in replanning
   };
 
   // Fast Planner Manager
