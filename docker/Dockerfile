@@ -119,12 +119,21 @@ RUN echo "alias cb='roscd && catkin build && sb'" >> ~/.bashrc
 RUN echo "alias ss='roscd && source devel/setup.bash'" >> ~/.bashrc
 RUN echo "alias cbf='clear && roscd && catkin build && ss'" >> ~/.bashrc
 
+# Create a data folder
+RUN mkdir -p /home/kota/data
+
 # Go to the ego_swarm_ws
 WORKDIR /home/kota/ego_swarm_ws
 
+# Set up Entry Point for benchmarking
+# ##########################################
+COPY ./run_benchmarking.yaml /
+RUN chmod +x /run_benchmarking.yaml
+ENTRYPOINT ["tmuxp", "load", "/run_benchmarking.yaml"]
+
 # Set up Entry Point
 # ##########################################
-COPY ./ego_swarm_sim.yml /
-RUN chmod +x /ego_swarm_sim.yml
-ENTRYPOINT ["tmuxp", "load", "/ego_swarm_sim.yml"]
+# COPY ./ego_swarm_sim.yml /
+# RUN chmod +x /ego_swarm_sim.yml
+# ENTRYPOINT ["tmuxp", "load", "/ego_swarm_sim.yml"]
 
