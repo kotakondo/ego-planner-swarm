@@ -12,6 +12,7 @@ from quadrotor_msgs.msg import PositionCommand  # noqa: F401
 from geometry_msgs.msg import PoseStamped       # noqa: F401
 
 
+# ----------------------------- Helpers -----------------------------
 def compute_distance(p1, p2):
     """Compute Euclidean distance between two 3D points."""
     return np.linalg.norm(np.array(p1) - np.array(p2))
@@ -23,10 +24,7 @@ def extract_number(filename):
     Assumes filename contains 'ego_swarm_num_<number>'. Returns the integer number.
     """
     match = re.search(r'ego_swarm_num_(\d+)', filename)
-    if match:
-        return int(match.group(1))
-    else:
-        return float('inf')  # Place files with no number at the end
+    return int(match.group(1)) if match else float('inf')
 
 
 def _trapz_safe(y, t):
@@ -57,38 +55,125 @@ def _trapz_safe(y, t):
     return float(np.trapz(y_sorted[mask], t_sorted[mask]))
 
 
-def _get_msg_jerk_norm(msg, fallback_acc=None, dt=None):
+def _ensure_strictly_increasing(t):
     """
-    Prefer jerk from PositionCommand if available; otherwise finite-difference acceleration.
+    Ensure strictly increasing time by nudging non-increasing samples forward by a tiny epsilon.
+    Returns a copy.
     """
-    # Try direct jerk field
+    t = np.asarray(t, dtype=float).copy()
+    if t.size == 0:
+        return t
+    eps = 1e-9
+    for k in range(1, t.size):
+        if t[k] <= t[k-1]:
+            t[k] = t[k-1] + eps
+    return t
+
+
+def _get_msg_jerk_vec(msg, fallback_acc=None, dt=None):
+    """
+    Return (jerk_vec, acc_vec). Prefer msg.jerk; fall back to finite-differenced acceleration.
+    """
+    acc_vec = np.array([msg.acceleration.x, msg.acceleration.y, msg.acceleration.z], float)
+
+    # Try message jerk first
     try:
-        j = np.linalg.norm([msg.jerk.x, msg.jerk.y, msg.jerk.z])
-        if np.isfinite(j):
-            return float(j), np.array([msg.acceleration.x, msg.acceleration.y, msg.acceleration.z], dtype=float)
+        j_vec = np.array([msg.jerk.x, msg.jerk.y, msg.jerk.z], float)
+        if np.all(np.isfinite(j_vec)):
+            return j_vec, acc_vec
     except Exception:
         pass
 
-    # Fallback: FD on acceleration if we have previous acc and valid dt
-    acc_vec = np.array([msg.acceleration.x, msg.acceleration.y, msg.acceleration.z], dtype=float)
+    # Fallback: finite difference on acceleration
     if fallback_acc is not None and dt is not None and dt > 0.0:
         j_vec = (acc_vec - fallback_acc) / dt
-        return float(np.linalg.norm(j_vec)), acc_vec
     else:
-        return 0.0, acc_vec
+        j_vec = np.zeros(3, float)
+    return j_vec, acc_vec
 
 
+def compute_Jsmooth_and_Eatt(times,
+                             acc_x, acc_y, acc_z,
+                             jerk_x=None, jerk_y=None, jerk_z=None,
+                             start_time=None, end_time=None):
+    """
+    Compute:
+      - J_smooth = sqrt((1/T) * ∫ ||jerk||^2 dt)        [m/s^3]
+      - E_att    = ∫ ||snap||^2 dt,  snap = d(jerk)/dt  [m^2/s^7]
+    Also returns 'snaps' = ||snap|| time series on the same window.
+
+    Args:
+      times:   sequence of timestamps [s]
+      acc_*:   acceleration components (x,y,z) [m/s^2]
+      jerk_*:  optional jerk components; if None, jerk is FD from acc
+      start_time, end_time: optional time window [s] to restrict integration
+
+    Returns:
+      dict with {'J_smooth': float, 'E_att': float, 'snaps': np.ndarray}
+    """
+    t  = np.asarray(times, float)
+    ax = np.asarray(acc_x, float)
+    ay = np.asarray(acc_y, float)
+    az = np.asarray(acc_z, float)
+    n = min(t.size, ax.size, ay.size, az.size)
+    if n < 2:
+        return {"J_smooth": 0.0, "E_att": 0.0, "snaps": np.array([])}
+    t, ax, ay, az = t[:n], ax[:n], ay[:n], az[:n]
+
+    # Window to [start_time, end_time] if provided
+    if start_time is not None or end_time is not None:
+        t0 = t[0] if start_time is None else start_time
+        t1 = t[-1] if end_time   is None else end_time
+        mask = (t >= t0) & (t <= t1)
+        if mask.sum() >= 2:
+            t, ax, ay, az = t[mask], ax[mask], ay[mask], az[mask]
+
+    # Ensure strictly increasing time (avoid zero/negative dt)
+    t_inc = _ensure_strictly_increasing(t)
+
+    # Jerk components: provided or FD from acceleration
+    have_j = (jerk_x is not None and jerk_y is not None and jerk_z is not None)
+    if have_j:
+        jx = np.asarray(jerk_x, float)[:t_inc.size]
+        jy = np.asarray(jerk_y, float)[:t_inc.size]
+        jz = np.asarray(jerk_z, float)[:t_inc.size]
+    else:
+        edge = 2 if t_inc.size >= 3 else 1
+        jx = np.gradient(ax, t_inc, edge_order=edge)
+        jy = np.gradient(ay, t_inc, edge_order=edge)
+        jz = np.gradient(az, t_inc, edge_order=edge)
+
+    # J_smooth (RMS jerk)
+    j2 = jx*jx + jy*jy + jz*jz                    # ||j||^2
+    J2 = _trapz_safe(j2, t_inc)                   # ∫ ||j||^2 dt
+    T  = max(float(t_inc[-1] - t_inc[0]), 1e-12)
+    J_smooth = float(np.sqrt(J2 / T))             # [m/s^3]
+
+    # E_att via snap = d/dt jerk
+    edge = 2 if t_inc.size >= 3 else 1
+    sx = np.gradient(jx, t_inc, edge_order=edge)
+    sy = np.gradient(jy, t_inc, edge_order=edge)
+    sz = np.gradient(jz, t_inc, edge_order=edge)
+    s2 = sx*sx + sy*sy + sz*sz                    # ||s||^2
+    E_att = float(_trapz_safe(s2, t_inc))         # [m^2/s^7]
+    snaps = np.sqrt(s2)                           # ||snap|| time series
+    return {"J_smooth": J_smooth, "E_att": E_att, "snaps": snaps}
+
+
+# ----------------------------- Core analysis -----------------------------
 def process_bag(bag_file, tol=1.0, v_constraint=2.0, a_constraint=5.0, j_constraint=30.0):
     """
-    Process a single bag file.
+    Process a single bag file (EGO-swarm).
 
-    Reads /move_base_simple/goal and /drone_0_planning/pos_cmd topics (EGO-swarm).
-    Computes the same metrics/logic as SUPER's analyzer:
+    Reads /move_base_simple/goal and /drone_0_planning/pos_cmd topics.
+    Computes:
       - travel_time: from first movement (> tol from start) until goal within tol
-      - path_length: sum of segment lengths
-      - smoothness: ∫ ||jerk|| dt using robust _trapz_safe
+      - path_length: sum of segment lengths (over the travel segment)
+      - smoothness:  ∫ ||jerk|| dt   [m/s^2] (legacy L1 jerk)
+      - J_smooth:    RMS jerk         [m/s^3]
+      - E_att:       ∫ ||snap||^2 dt  [m^2/s^7]
       - per-message violation counts with 1% slack
-      - returns total_pos_cmds to allow percentage calculations
+      - total_pos_cmds for percentage calculations
     Returns None if a valid travel time cannot be computed.
     """
     bag = rosbag.Bag(bag_file)
@@ -103,11 +188,15 @@ def process_bag(bag_file, tol=1.0, v_constraint=2.0, a_constraint=5.0, j_constra
     jerks = []
     positions = []
 
+    # For vector metrics
+    acc_x, acc_y, acc_z = [], [], []
+    jerk_x, jerk_y, jerk_z = [], [], []
+
     vel_violations = 0
     acc_violations = 0
     jerk_violations = 0
 
-    # 1% tolerance (match SUPER’s slack handling)
+    # 1% tolerance slack on constraints
     perct = 0.01
     v_thresh = v_constraint * (1.0 + perct)
     a_thresh = a_constraint * (1.0 + perct)
@@ -131,22 +220,28 @@ def process_bag(bag_file, tol=1.0, v_constraint=2.0, a_constraint=5.0, j_constra
 
             pos_cmd_times.append(pos_time)
 
-            # Position for path length
+            # Position for path length and start/goal detection
             pos = (msg.position.x, msg.position.y, msg.position.z)
             positions.append(pos)
 
-            # Norms
-            vel = np.linalg.norm([msg.velocity.x, msg.velocity.y, msg.velocity.z])
-            acc_vec = np.array([msg.acceleration.x, msg.acceleration.y, msg.acceleration.z], dtype=float)
+            # Velocity & acceleration
+            v_vec = [msg.velocity.x, msg.velocity.y, msg.velocity.z]
+            vel = float(np.linalg.norm(v_vec))
+            acc_vec = np.array([msg.acceleration.x, msg.acceleration.y, msg.acceleration.z], float)
             acc = float(np.linalg.norm(acc_vec))
 
-            # Prefer jerk from message, fallback to FD on acceleration
+            # Jerk: prefer message; fallback FD on acceleration
             dt = (pos_time - prev_time) if prev_time is not None else None
-            jrk, acc_vec = _get_msg_jerk_norm(msg, fallback_acc=prev_acc, dt=dt)
+            j_vec, acc_vec = _get_msg_jerk_vec(msg, fallback_acc=prev_acc, dt=dt)
+            jrk = float(np.linalg.norm(j_vec))
 
             velocities.append(vel)
             accelerations.append(acc)
             jerks.append(jrk)
+
+            # Store components for vector metrics
+            acc_x.append(acc_vec[0]); acc_y.append(acc_vec[1]); acc_z.append(acc_vec[2])
+            jerk_x.append(j_vec[0]);  jerk_y.append(j_vec[1]);  jerk_z.append(j_vec[2])
 
             if vel > v_thresh: vel_violations += 1
             if acc > a_thresh: acc_violations += 1
@@ -154,7 +249,7 @@ def process_bag(bag_file, tol=1.0, v_constraint=2.0, a_constraint=5.0, j_constra
 
             total_pos_cmds += 1
             prev_time = pos_time
-            prev_acc = acc_vec
+            prev_acc  = acc_vec
 
             # Detect start of motion (> tol from initial position)
             if start_time is None:
@@ -178,15 +273,32 @@ def process_bag(bag_file, tol=1.0, v_constraint=2.0, a_constraint=5.0, j_constra
 
     travel_time = travel_end_time - start_time
 
-    # Path length
+    # Path length over the travel segment only
     path_length = 0.0
     if len(positions) >= 2:
-        for i in range(len(positions) - 1):
-            path_length += compute_distance(positions[i], positions[i + 1])
+        # Determine segment indices that correspond to [start_time, travel_end_time]
+        # pos_cmd_times grows 1-to-1 with positions after goal_time
+        t_arr = np.asarray(pos_cmd_times, float)
+        seg_mask = (t_arr >= start_time) & (t_arr <= travel_end_time)
+        idxs = np.nonzero(seg_mask)[0]
+        if idxs.size >= 2:
+            pos_seg = [positions[i] for i in idxs]
+            for i in range(len(pos_seg) - 1):
+                path_length += compute_distance(pos_seg[i], pos_seg[i + 1])
 
-    # Smoothness: ∫ ||jerk|| dt (over the segment we actually recorded;
-    # mirrors SUPER behavior since we appended samples after goal_time and broke at goal)
-    smoothness = _trapz_safe(jerks, pos_cmd_times)
+    # Legacy L1 jerk (over whatever segment we logged in pos_cmd_times)
+    smoothness = _trapz_safe(jerks, pos_cmd_times)  # [m/s^2]
+
+    # New metrics over the travel window
+    metrics = compute_Jsmooth_and_Eatt(
+        times=pos_cmd_times,
+        acc_x=acc_x, acc_y=acc_y, acc_z=acc_z,
+        jerk_x=jerk_x, jerk_y=jerk_y, jerk_z=jerk_z,
+        start_time=start_time, end_time=travel_end_time
+    )
+    J_smooth = metrics["J_smooth"]  # [m/s^3]
+    E_att    = metrics["E_att"]     # [m^2/s^7]
+    snaps    = metrics["snaps"]     # ||snap|| (not used further unless plotting)
 
     result = {
         "travel_time": float(travel_time),
@@ -195,21 +307,25 @@ def process_bag(bag_file, tol=1.0, v_constraint=2.0, a_constraint=5.0, j_constra
         "velocities": np.array(velocities, dtype=float),
         "accelerations": np.array(accelerations, dtype=float),
         "jerks": np.array(jerks, dtype=float),
-        "smoothness": float(smoothness),
+        "snaps": np.array(snaps, dtype=float),
+        "smoothness": float(smoothness),  # ∫||j|| dt
+        "J_smooth": float(J_smooth),      # RMS jerk
+        "E_att": float(E_att),            # ∫||snap||^2 dt
         "vel_violations": int(vel_violations),
         "acc_violations": int(acc_violations),
         "jerk_violations": int(jerk_violations),
         "total_pos_cmds": int(total_pos_cmds),
+        "start_time": float(start_time),
+        "end_time": float(travel_end_time),
     }
     return result
 
 
-def save_plots(bag_file, results, v_constraint=2.0, a_constraint=5.0, j_constraint=30.0):
+def save_plots(bag_file, results, v_constraint=2.0, a_constraint=5.0, j_constraint=30.0, show_snap=True):
     """
     Save:
       1) Velocity histogram  -> <bag>_velocity_profile.pdf
-      2) Time histories (v, a, j) -> <bag>_vel_accel_jerk.pdf
-    (Same plotting style as SUPER.)
+      2) Time histories (v, a, j[, s]) -> <bag>_vel_accel_jerk[_snap].pdf
     """
     base_name = os.path.splitext(os.path.basename(bag_file))[0]
     folder = os.path.dirname(bag_file)
@@ -220,7 +336,7 @@ def save_plots(bag_file, results, v_constraint=2.0, a_constraint=5.0, j_constrai
     plt.xlabel("Velocity (m/s)")
     plt.ylabel("Frequency")
     plt.title("Velocity Profile Histogram")
-    plt.axvline(x=v_constraint, color="red", linestyle="--", label=f"v constraint = {v_constraint} m/s")
+    plt.axvline(x=v_constraint, linestyle="--", label=f"v constraint = {v_constraint} m/s")
     plt.legend()
     plt.grid(True)
     hist_path = os.path.join(folder, f"{base_name}_velocity_profile.pdf")
@@ -233,41 +349,57 @@ def save_plots(bag_file, results, v_constraint=2.0, a_constraint=5.0, j_constrai
     v = results["velocities"]
     a = results["accelerations"]
     j = results["jerks"]
+    s = results.get("snaps", None)
 
-    plt.figure(figsize=(12, 10))
-    plt.subplot(3, 1, 1)
+    if show_snap and s is not None and s.size == t.size:
+        plt.figure(figsize=(12, 12))
+        rows = 4
+    else:
+        plt.figure(figsize=(12, 10))
+        rows = 3
+
+    plt.subplot(rows, 1, 1)
     plt.plot(t, v, label="Velocity (m/s)")
-    plt.axhline(y=v_constraint, color="red", linestyle="--", label=f"v constraint = {v_constraint} m/s")
+    plt.axhline(y=v_constraint, linestyle="--", label=f"v constraint = {v_constraint} m/s")
     plt.xlabel("Time (s)")
     plt.ylabel("Velocity (m/s)")
     plt.legend(); plt.grid(True)
 
-    plt.subplot(3, 1, 2)
+    plt.subplot(rows, 1, 2)
     plt.plot(t, a, label="Acceleration (m/s²)")
-    plt.axhline(y=a_constraint, color="red", linestyle="--", label=f"a constraint = {a_constraint} m/s²")
+    plt.axhline(y=a_constraint, linestyle="--", label=f"a constraint = {a_constraint} m/s²")
     plt.xlabel("Time (s)")
     plt.ylabel("Acceleration (m/s²)")
     plt.legend(); plt.grid(True)
 
-    plt.subplot(3, 1, 3)
+    plt.subplot(rows, 1, 3)
     plt.plot(t, j, label="Jerk (m/s³)")
-    plt.axhline(y=j_constraint, color="red", linestyle="--", label=f"j constraint = {j_constraint} m/s³")
+    plt.axhline(y=j_constraint, linestyle="--", label=f"j constraint = {j_constraint} m/s³")
     plt.xlabel("Time (s)")
     plt.ylabel("Jerk (m/s³)")
     plt.legend(); plt.grid(True)
 
+    if rows == 4:
+        plt.subplot(rows, 1, 4)
+        plt.plot(t, s, label="Snap (m/s⁴)")
+        plt.xlabel("Time (s)")
+        plt.ylabel("Snap (m/s⁴)")
+        plt.legend(); plt.grid(True)
+
     plt.tight_layout()
-    time_history_path = os.path.join(folder, f"{base_name}_vel_accel_jerk.pdf")
+    suffix = "_vel_accel_jerk_snap.pdf" if rows == 4 else "_vel_accel_jerk.pdf"
+    time_history_path = os.path.join(folder, f"{base_name}{suffix}")
     plt.savefig(time_history_path)
     plt.close()
-    print("  Saved vel/accel/jerk time history plot to:", time_history_path)
+    print("  Saved time history plot to:", time_history_path)
 
 
+# ----------------------------- Entry point -----------------------------
 def main():
     # Need 4 args after script: folder, v_max, a_max, j_max
     if len(sys.argv) < 5:
         print(f"Usage: {sys.argv[0]} <bag_folder> <v_max> <a_max> <j_max>")
-        print(f"Example: python3 analyze_bag.py /home/kota/data 2.0 5.0 30.0")
+        print(f"Example: python3 analyze_bag_ego.py /home/kota/data 2.0 5.0 30.0")
         sys.exit(1)
 
     bag_folder = sys.argv[1]
@@ -275,7 +407,7 @@ def main():
     a_constraint = float(sys.argv[3])
     j_constraint = float(sys.argv[4])
 
-    tol = 1.0  # meters
+    tol = 1.0  # meters (start/goal proximity)
     bag_files = glob.glob(os.path.join(bag_folder, "*.bag"))
     if not bag_files:
         print("No bag files found in folder:", bag_folder)
@@ -286,7 +418,10 @@ def main():
 
     overall_travel_times = []
     overall_path_lengths = []
-    overall_smoothness = []
+    overall_smoothness = []   # ∫||j|| dt (legacy L1 jerk)
+    overall_J_smooth = []     # RMS jerk
+    overall_E_att = []        # ∫||snap||^2 dt
+
     overall_vel_violations = 0
     overall_acc_violations = 0
     overall_jerk_violations = 0
@@ -306,12 +441,14 @@ def main():
         overall_travel_times.append(result["travel_time"])
         overall_path_lengths.append(result["path_length"])
         overall_smoothness.append(result["smoothness"])
+        overall_J_smooth.append(result["J_smooth"])
+        overall_E_att.append(result["E_att"])
         overall_vel_violations += result["vel_violations"]
         overall_acc_violations += result["acc_violations"]
         overall_jerk_violations += result["jerk_violations"]
         overall_cmds += result["total_pos_cmds"]
 
-        # Per-bag percentages (match SUPER’s reporting)
+        # Per-bag percentages
         v_pct = (result["vel_violations"] / result["total_pos_cmds"] * 100.0) if result["total_pos_cmds"] else 0.0
         a_pct = (result["acc_violations"] / result["total_pos_cmds"] * 100.0) if result["total_pos_cmds"] else 0.0
         j_pct = (result["jerk_violations"] / result["total_pos_cmds"] * 100.0) if result["total_pos_cmds"] else 0.0
@@ -320,24 +457,30 @@ def main():
         stats_lines.append(f"  Travel time: {result['travel_time']:.3f} s\n")
         stats_lines.append(f"  Path length: {result['path_length']:.3f} m\n")
         stats_lines.append(f"  Smoothness (∫||jerk|| dt): {result['smoothness']:.6f} m/s^2\n")
+        stats_lines.append(f"  J_smooth (RMS jerk): {result['J_smooth']:.6f} m/s^3\n")
+        stats_lines.append(f"  E_att (∫||snap||^2 dt): {result['E_att']:.6e} m^2/s^7\n")
         stats_lines.append(f"  Velocity violations (>{v_constraint} m/s): {result['vel_violations']} ({v_pct:.2f}%)\n")
         stats_lines.append(f"  Acceleration violations (>{a_constraint} m/s²): {result['acc_violations']} ({a_pct:.2f}%)\n")
         stats_lines.append(f"  Jerk violations (>{j_constraint} m/s³): {result['jerk_violations']} ({j_pct:.2f}%)\n\n")
 
         # Plots per bag
-        save_plots(bag_file, result, v_constraint, a_constraint, j_constraint)
+        save_plots(bag_file, result, v_constraint, a_constraint, j_constraint, show_snap=True)
 
     # Overall stats
     if processed_count > 0:
         avg_travel_time = float(np.mean(overall_travel_times))
         avg_path_length = float(np.mean(overall_path_lengths))
         avg_smoothness = float(np.mean(overall_smoothness)) if overall_smoothness else 0.0
+        avg_J_smooth = float(np.mean(overall_J_smooth)) if overall_J_smooth else 0.0
+        avg_E_att = float(np.mean(overall_E_att)) if overall_E_att else 0.0
 
         stats_lines.append("Overall Statistics:\n")
         stats_lines.append(f"  Processed bag files: {processed_count}\n")
         stats_lines.append(f"  Average travel time: {avg_travel_time:.3f} s\n")
         stats_lines.append(f"  Average path length: {avg_path_length:.3f} m\n")
         stats_lines.append(f"  Average smoothness (∫||jerk|| dt): {avg_smoothness:.6f} m/s^2\n")
+        stats_lines.append(f"  Average J_smooth (RMS jerk): {avg_J_smooth:.6f} m/s^3\n")
+        stats_lines.append(f"  Average E_att (∫||snap||^2 dt): {avg_E_att:.6e} m^2/s^7\n")
         if overall_cmds > 0:
             stats_lines.append(f"  Velocity violations: {overall_vel_violations / overall_cmds * 100.0:.2f} %\n")
             stats_lines.append(f"  Acceleration violations: {overall_acc_violations / overall_cmds * 100.0:.2f} %\n")
