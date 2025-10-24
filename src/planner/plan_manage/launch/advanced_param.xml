@@ -55,11 +55,10 @@
     <remap from="~planning/broadcast_bspline_to_planner" to = "/broadcast_bspline"/>
 
     <remap from="~grid_map/odom" to="/drone_$(arg drone_id)_$(arg odometry_topic)"/>
-    <remap from="~grid_map/cloud" to="/SQ01s/camera/cloud"/>
+    <remap from="~grid_map/cloud" to="/livox/lidar"/>
     <remap from="~grid_map/pose"   to = "/drone_$(arg drone_id)_$(arg camera_pose_topic)"/> 
     <remap from="~grid_map/depth" to = "/drone_$(arg drone_id)_$(arg depth_topic)"/>
     
-
     <!-- planning fsm -->
     <param name="fsm/flight_type" value="$(arg flight_type)" type="int"/>
     <param name="fsm/thresh_replan_time" value="1.0" type="double"/>
@@ -112,15 +111,15 @@
     <param name="grid_map/k_depth_scaling_factor" value="1000.0"/>
     <param name="grid_map/skip_pixel" value="2"/>
     <!-- local fusion -->
-    <param name="grid_map/p_hit"  value="0.65"/>
-    <param name="grid_map/p_miss" value="0.35"/>
+    <param name="grid_map/p_hit"  value="0.75"/>
+    <param name="grid_map/p_miss" value="0.0"/>
     <param name="grid_map/p_min"  value="0.12"/>
     <param name="grid_map/p_max"  value="0.90"/>
-    <param name="grid_map/p_occ"  value="0.80"/>
+    <param name="grid_map/p_occ"  value="0.70"/>
     <param name="grid_map/min_ray_length" value="0.1"/>
-    <param name="grid_map/max_ray_length" value="10.0"/>
+    <param name="grid_map/max_ray_length" value="20.0"/>
 
-    <param name="grid_map/virtual_ceil_height"   value="4.9"/>
+    <param name="grid_map/virtual_ceil_height"   value="5.9"/>
     <param name="grid_map/visualization_truncate_height"   value="4.0"/>
     <param name="grid_map/show_occ_time"  value="false"/>
     <param name="grid_map/pose_type"     value="1"/>  

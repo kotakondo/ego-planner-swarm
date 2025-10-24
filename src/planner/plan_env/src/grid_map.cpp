@@ -772,7 +772,7 @@ void GridMap::cloudCallback(const sensor_msgs::PointCloud2ConstPtr &img)
     return;
 
   // Define the self-filtering radius
-  double self_filter_radius = 0.2;  // Set an appropriate value (meters)
+  double self_filter_radius = 0.5;  // Set an appropriate value (meters)
 
   // Retrieve the transform from sensor frame to world frame
   std::string target_frame = "world";  
