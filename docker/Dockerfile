@@ -118,7 +118,7 @@ RUN echo "alias roscd='cd /home/kota/ego_swarm_ws'" >> ~/.bashrc
 RUN echo "alias cb='roscd && catkin build && sb'" >> ~/.bashrc
 RUN echo "alias ss='roscd && source devel/setup.bash'" >> ~/.bashrc
 RUN echo "alias cbf='clear && roscd && catkin build && ss'" >> ~/.bashrc
-RUN echo "DISABLE_ROS1_EOL_WARNING=1" >> ~/.bashrc
+RUN echo "export DISABLE_ROS1_EOL_WARNINGS=1" >> ~/.bashrc
 
 # Create a data folder
 RUN mkdir -p /home/kota/data
